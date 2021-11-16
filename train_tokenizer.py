@@ -12,7 +12,7 @@ name_to_predefined_model = {
 }
 
 @dataclass
-class DataArgument:
+class DataArguments:
     corpora_dir: str = field(
         default = "corpora/kowiki",
     )
@@ -24,7 +24,7 @@ class DataArgument:
     )
 
 @dataclass
-class ModelArgument:
+class ModelArguments:
     model_name: str = field(
         default = "bert",
         metadata = {
@@ -46,7 +46,7 @@ class ModelArgument:
 
 
 def main():
-    parser = HfArgumentParser((DataArgument, ModelArgument))
+    parser = HfArgumentParser((DataArguments, ModelArguments))
     data_args, model_args = parser.parse_args_into_dataclasses()
     corpora = load_corpora(data_args.corpora_dir)
 

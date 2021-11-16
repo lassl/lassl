@@ -10,7 +10,7 @@ name_to_preprocessor = {
 
 
 @dataclass
-class Argument:
+class Arguments:
     model_name: str = field(
         default= "roberta",
         metadata = {
@@ -40,7 +40,7 @@ class Argument:
 
 
 def main():
-    parser = HfArgumentParser(Argument)
+    parser = HfArgumentParser(Arguments)
     args = parser.parse_args_into_dataclasses()[0]
     preprocessor = name_to_preprocessor[args.model_name](args.tokenizer_dir, args.max_length)
 

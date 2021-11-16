@@ -1,3 +1,5 @@
+from transformers.utils.logging import get_logger
+from transformers.testing_utils import CaptureLogger
 from transformers import RobertaTokenizerFast
 
 
@@ -7,7 +9,14 @@ class RobertaPreProcesssor:
         self._max_length = max_length
 
     def create_training_examples(self, examples):
-        training_examples = self._tokenizer(examples, padding=False, add_special_tokens=True, truncation=False, return_attention_mask=True, return_special_tokens_mask=True)
+        tok_logger = get_logger("transformers.tokenization_utils_base")
+        with CaptureLogger(tok_logger) as cl:
+            training_examples = self._tokenizer(examples, padding=False, add_special_tokens=True, truncation=False, return_attention_mask=True, return_special_tokens_mask=True)
+        # clm input could be much much longer than block_size
+        if "Token indices sequence length is longer than the" in cl.out:
+            tok_logger.warning(
+                "^^^^^^^^^^^^^^^^ Please ignore the warning above - this long input will be chunked into smaller bits before being passed to the model."
+            )
         return training_examples
 
     def concatenate_training_examples(self, training_examples):
