@@ -1,0 +1,24 @@
+[tool.poetry]
+name = "lassl"
+version = "0.1.0"
+description = "Easy framework for pre-training language models"
+authors = ["seopbo <bsk0130@gmail.com>"]
+license = "MIT"
+
+[tool.poetry.dependencies]
+python = "^3.7"
+transformers = "^4.12.5"
+datasets = "^1.15.1"
+tokenizers = "^0.10.3"
+black = "^21.11b1"
+isort = "^5.10.1"
+
+[tool.poetry.dev-dependencies]
+
+[build-system]
+requires = ["poetry-core>=1.0.0"]
+build-backend = "poetry.core.masonry.api"
+
+[tool.isort]
+profile = "black"
+multi_line_output = 3
