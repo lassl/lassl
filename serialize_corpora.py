@@ -2,11 +2,11 @@ from dataclasses import dataclass, field
 
 from transformers import HfArgumentParser
 
-from src.preprocessing import RobertaProcesssor
+from src.preprocessing import RobertaProcessor
 from src.utils import load_corpora
 
 name_to_preprocessor = {
-    "roberta": RobertaProcesssor,
+    "roberta": RobertaProcessor,
 }
 
 

@@ -9,9 +9,9 @@ class RobertaProcessor:
         self._max_length = max_length
         self._buffer = []
 
-    def process(self, batch_of_str: List[str]) -> Dict[List[int]]:
-        list_of_examples: List[Dict[int]] = []
-        training_examples: Dict[List[int]] = {}
+    def process(self, batch_of_str: List[str]) -> Dict[str, List[int]]:
+        list_of_training_examples: List[Dict[str, int]] = []
+        dict_of_training_examples: Dict[str, List[int]] = {}
         batch_of_input_ids: List[List[int]] = self._tokenizer(
             batch_of_str,
             padding=False,
@@ -27,7 +27,7 @@ class RobertaProcessor:
 
             if len(self._buffer) >= (self._max_length - 2):
                 chunk_ids = self._buffer[: self._max_length - 2]
-                example = self._tokenizer.prepare_for_model(
+                training_example = self._tokenizer.prepare_for_model(
                     chunk_ids,
                     padding=False,
                     add_special_tokens=True,
@@ -35,13 +35,13 @@ class RobertaProcessor:
                     return_attention_mask=True,
                     return_token_type_ids=False,
                 )
-                list_of_examples.append(example)
+                list_of_training_examples.append(training_example)
                 self._buffer = self._buffer[self._max_length - 2 :]
 
-        for training_example in list_of_examples:
+        for training_example in list_of_training_examples:
             for key in training_example:
-                if key not in training_examples:
-                    training_examples.setdefault(key, [])
-                training_examples[key].append(training_example[key])
+                if key not in dict_of_training_examples:
+                    dict_of_training_examples.setdefault(key, [])
+                dict_of_training_examples[key].append(training_example[key])
 
-        return training_examples
+        return dict_of_training_examples
