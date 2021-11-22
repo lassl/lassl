@@ -1,66 +1,61 @@
 from dataclasses import dataclass, field
-from src.utils import load_corpora
-from src.preprocessing import RobertaPreProcesssor
+
 from transformers import HfArgumentParser
 
+from src.preprocessing import RobertaProcesssor
+from src.utils import load_corpora
 
 name_to_preprocessor = {
-    "roberta": RobertaPreProcesssor,
+    "roberta": RobertaProcesssor,
 }
 
 
 @dataclass
 class Arguments:
     model_name: str = field(
-        default= "roberta",
-        metadata = {
+        default="roberta",
+        metadata={
             "choices": [
                 "roberta",
             ]
-        }
+        },
     )
     tokenizer_dir: str = field(
-        default = "tokenizers/roberta",
+        default="tokenizers/roberta",
     )
     corpora_dir: str = field(
-        default = "corpora/kowiki",
+        default="corpora/kowiki",
     )
     max_length: int = field(
-        default = 512,
+        default=512,
     )
     num_proc: int = field(
-        default = 4,
+        default=4,
     )
     batch_size: int = field(
-        default = 1000,
+        default=1000,
     )
     writer_batch_size: int = field(
-        default = 1000,
+        default=1000,
     )
 
 
 def main():
     parser = HfArgumentParser(Arguments)
     args = parser.parse_args_into_dataclasses()[0]
-    preprocessor = name_to_preprocessor[args.model_name](args.tokenizer_dir, args.max_length)
+    preprocessor = name_to_preprocessor[args.model_name](
+        args.tokenizer_dir, args.max_length
+    )
 
     corpora = load_corpora(args.corpora_dir)
-    intermediate_dataset = corpora.map(
-        lambda examples: preprocessor.create_training_examples(examples["text"]),
+    dataset = corpora.map(
+        lambda examples: preprocessor.process(examples["text"]),
         num_proc=args.num_proc,
         batched=True,
         batch_size=args.batch_size,
         writer_batch_size=args.writer_batch_size,
         remove_columns=corpora.column_names,
     )
-    dataset = intermediate_dataset.map(
-        lambda examples: preprocessor.concatenate_training_examples(examples),
-        num_proc=args.num_proc,
-        batched=True,
-        batch_size=args.batch_size,
-        writer_batch_size=args.writer_batch_size,
-    )
-
     dataset.save_to_disk("datasets/" + args.model_name)
 
 

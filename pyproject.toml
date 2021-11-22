@@ -6,12 +6,13 @@ authors = ["seopbo <bsk0130@gmail.com>"]
 license = "MIT"
 
 [tool.poetry.dependencies]
-python = "^3.7"
+python = "^3.8"
 transformers = "^4.12.5"
 datasets = "^1.15.1"
 tokenizers = "^0.10.3"
 black = "^21.11b1"
 isort = "^5.10.1"
+torch = "^1.10.0"
 
 [tool.poetry.dev-dependencies]
 

@@ -1,32 +1,32 @@
 import logging
 import os
 from dataclasses import dataclass, field
-from datasets import Dataset
-from transformers.trainer_utils import get_last_checkpoint
+
 from transformers import (
     AutoConfig,
-    AutoTokenizer,
     AutoModelForCausalLM,
     AutoModelForMaskedLM,
-    HfArgumentParser,
-    Trainer, 
-    TrainingArguments,
+    AutoTokenizer,
     DataCollatorForLanguageModeling,
+    HfArgumentParser,
+    Trainer,
+    TrainingArguments,
     set_seed,
 )
+from transformers.trainer_utils import get_last_checkpoint
 
+from datasets import Dataset
 
 logger = logging.getLogger(__name__)
 
 
 @dataclass
 class DataArguments:
-    data_dir: str = field(
-        default="datasets/roberta"
-    )
+    data_dir: str = field(default="datasets/roberta")
     mlm_probability: float = field(
         default=0.15,
     )
+
 
 @dataclass
 class ModelArguments:
@@ -36,7 +36,7 @@ class ModelArguments:
             "choices": [
                 "roberta-base",
             ]
-        }
+        },
     )
     tokenizer_dir: str = field(
         default="tokenizers/roberta",
@@ -51,7 +51,9 @@ def main():
     config = AutoConfig.from_pretrained(model_args.model_name)
     if model_args.model_name in ["roberta-base"]:
         model = AutoModelForMaskedLM.from_config(config)
-        data_collator = DataCollatorForLanguageModeling(tokenizer=tokenizer, mlm_probability=data_args.mlm_probability)
+        data_collator = DataCollatorForLanguageModeling(
+            tokenizer=tokenizer, mlm_probability=data_args.mlm_probability
+        )
     elif model_args.model_name in ["gpt2"]:
         model = AutoModelForCausalLM.from_config(config)
         data_collator = DataCollatorForLanguageModeling(tokenizer=tokenizer, mlm=False)
@@ -67,14 +69,20 @@ def main():
     )
 
     last_checkpoint = None
-    if os.path.isdir(training_args.output_dir) and training_args.do_train and not training_args.overwrite_output_dir:
+    if (
+        os.path.isdir(training_args.output_dir)
+        and training_args.do_train
+        and not training_args.overwrite_output_dir
+    ):
         last_checkpoint = get_last_checkpoint(training_args.output_dir)
         if last_checkpoint is None and len(os.listdir(training_args.output_dir)) > 0:
             raise ValueError(
                 f"Output directory ({training_args.output_dir}) already exists and is not empty. "
                 "Use --overwrite_output_dir to overcome."
             )
-        elif last_checkpoint is not None and training_args.resume_from_checkpoint is None:
+        elif (
+            last_checkpoint is not None and training_args.resume_from_checkpoint is None
+        ):
             logger.info(
                 f"Checkpoint detected, resuming training at {last_checkpoint}. To avoid this behavior, change "
                 "the `--output_dir` or add `--overwrite_output_dir` to train from scratch."
@@ -93,7 +101,9 @@ def main():
     metrics = train_result.metrics
 
     max_train_samples = (
-        data_args.max_train_samples if data_args.max_train_samples is not None else len(dataset)
+        data_args.max_train_samples
+        if data_args.max_train_samples is not None
+        else len(dataset)
     )
     metrics["train_samples"] = min(max_train_samples, len(dataset))
 

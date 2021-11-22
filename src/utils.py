@@ -2,8 +2,6 @@ import glob
 import os
 import datasets
 
-import datetime
-import re
 from typing import Generator, Union
 
 from datasets import load_dataset
@@ -24,7 +22,9 @@ def find_files(data_dir, data_files):
     elif data_dir is not None and data_files is None:
         pathname = data_dir + "/**/*.*"
         data_files = glob.glob(pathname, recursive=True)
-        data_files = [p for p in data_files if p.endswith(".txt") or p.endswith(".json")]
+        data_files = [
+            p for p in data_files if p.endswith(".txt") or p.endswith(".json")
+        ]
     elif data_dir is not None and data_files is not None:
         if isinstance(data_files, str):
             data_files = [data_files]
@@ -53,21 +53,15 @@ def load_corpora(data_dir, cache_dir=None, split="train", data_files=None):
     raise ValueError("File formats other than '.txt' and '.json' are not supported yet")
 
 
-def secs_to_str(secs: float):
-    """From Google Electra(https://github.com/google-research/electra/blob/master/util/training_utils.py#L68-L84)"""
-    s = str(datetime.timedelta(seconds=int(round(secs))))
-    s = re.sub("^0:", "", s)
-    s = re.sub("^0", "", s)
-    s = re.sub("^0:", "", s)
-    s = re.sub("^0", "", s)
-    return s
-
-
-def get_params_without_weight_decay_ln(named_params: Union[list, Generator], weight_decay: float = 0.1):
+def get_params_without_weight_decay_ln(
+    named_params: Union[list, Generator], weight_decay: float = 0.1
+):
     no_decay = ["bias", "LayerNorm.weight"]
     optimizer_grouped_parameters = [
         {
-            "params": [p for n, p in named_params if not any(nd in n for nd in no_decay)],
+            "params": [
+                p for n, p in named_params if not any(nd in n for nd in no_decay)
+            ],
             "weight_decay": weight_decay,
         },
         {
