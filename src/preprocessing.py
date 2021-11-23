@@ -35,6 +35,8 @@ class RobertaProcessor:
                     return_attention_mask=True,
                     return_token_type_ids=False,
                 )
+                special_tokens_mask_of_training_example: List[int] = self._tokenizer.get_special_tokens_mask(training_example["input_ids"], already_has_special_tokens=True)
+                training_example["special_tokens_mask"] = special_tokens_mask_of_training_example
                 list_of_training_examples.append(training_example)
                 self._buffer = self._buffer[self._max_length - 2 :]
 

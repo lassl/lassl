@@ -62,6 +62,7 @@ def main():
     tokenizer = AutoTokenizer.from_pretrained(
         name_to_predefined_model[model_args.model_name]
     )
+
     data_iterator = batch_iterator(sampled_corpora, batch_size=data_args.batch_size)
     tokenizer = tokenizer.train_new_from_iterator(
         data_iterator,
