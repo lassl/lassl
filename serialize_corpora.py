@@ -2,11 +2,15 @@ from dataclasses import dataclass, field
 
 from transformers import HfArgumentParser
 
-from src.preprocessing import RobertaProcessor
+from src.preprocessing import (
+    RobertaProcessor,
+    Gpt2Processor,
+)
 from src.utils import load_corpora
 
 name_to_preprocessor = {
     "roberta": RobertaProcessor,
+    "gpt2": Gpt2Processor,
 }
 
 
@@ -17,6 +21,7 @@ class Arguments:
         metadata={
             "choices": [
                 "roberta",
+                "gpt2",
             ]
         },
     )
