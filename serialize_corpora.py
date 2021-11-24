@@ -4,13 +4,13 @@ from transformers import HfArgumentParser
 
 from src.preprocessing import (
     RobertaProcessor,
-    Gpt2Processor,
+    GPT2Processor,
 )
 from src.utils import load_corpora
 
 name_to_preprocessor = {
     "roberta": RobertaProcessor,
-    "gpt2": Gpt2Processor,
+    "gpt2": GPT2Processor,
 }
 
 

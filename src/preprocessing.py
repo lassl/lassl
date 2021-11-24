@@ -37,14 +37,22 @@ class BaseProcessor:
                     return_attention_mask=True,
                     return_token_type_ids=False,
                 )
-                special_tokens_mask_of_training_example: List[
-                    int
+
+                training_example[
+                    "special_tokens_mask"
                 ] = self._tokenizer.get_special_tokens_mask(
                     training_example["input_ids"], already_has_special_tokens=True
                 )
-                training_example[
-                    "special_tokens_mask"
-                ] = special_tokens_mask_of_training_example
+
+                training_example["position_ids"] = [
+                    i for i in range(len(training_example["input_ids"]))
+                ]
+
+                assert (
+                    len(training_example["input_ids"])
+                    == len(training_example["position_ids"])
+                    == len(training_example["special_tokens_mask"])
+                )
                 list_of_training_examples.append(training_example)
                 self._buffer = self._buffer[self._chunk_size :]
 
@@ -65,7 +73,7 @@ class RobertaProcessor(BaseProcessor):
         self._chunk_size = max_length - 2
 
 
-class Gpt2Processor(BaseProcessor):
+class GPT2Processor(BaseProcessor):
     def __init__(self, model_name_or_path: str, max_length: int) -> None:
         super().__init__()
         self._tokenizer = GPT2TokenizerFast.from_pretrained(model_name_or_path)
