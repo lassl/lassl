@@ -2,10 +2,7 @@ from dataclasses import dataclass, field
 
 from transformers import HfArgumentParser
 
-from src.preprocessing import (
-    RobertaProcessor,
-    GPT2Processor,
-)
+from src.processing import GPT2Processor, RobertaProcessor
 from src.utils import load_corpora
 
 name_to_preprocessor = {
@@ -43,6 +40,9 @@ class Arguments:
     writer_batch_size: int = field(
         default=1000,
     )
+    load_from_cache_file: bool = field(
+        default=True,
+    )
 
 
 def main():
@@ -54,11 +54,12 @@ def main():
 
     corpora = load_corpora(args.corpora_dir)
     dataset = corpora.map(
-        lambda examples: preprocessor.process(examples["text"]),
+        lambda examples: preprocessor(examples["text"]),
         num_proc=args.num_proc,
         batched=True,
         batch_size=args.batch_size,
         writer_batch_size=args.writer_batch_size,
+        load_from_cache_file=args.load_from_cache_file,
         remove_columns=corpora.column_names,
     )
     dataset.save_to_disk("datasets/" + args.model_name)
