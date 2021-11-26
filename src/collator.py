@@ -29,7 +29,7 @@ class DataCollatorForSOP(DataCollatorForLanguageModeling):
     def prepare_sop_from_examples(self, examples: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
         output_examples = []
         for example in examples:
-            chunk_ids = example["chunk_ids"]
+            chunk_ids = example["input_ids"]
             seq_length = len(chunk_ids)
             start, end = seq_length // 3, seq_length // 3 * 2
             split_position = random.randrange(start, end)

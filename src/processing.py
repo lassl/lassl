@@ -113,7 +113,7 @@ class AlbertProcessor(BaseProcessor):
         self._chunk_size = max_length - 3
 
     def __call__(self, list_of_str: List[str]) -> Dict[str, List[int]]:
-        dict_of_training_examples: Dict[str, List[int]] = {"chunk_ids": []}
+        dict_of_training_examples: Dict[str, List[int]] = {"input_ids": []}
         
         list_of_input_ids: List[List[int]] = self._tokenizer(
             list_of_str,
@@ -130,7 +130,7 @@ class AlbertProcessor(BaseProcessor):
 
             if len(self._buffer) >= (self._chunk_size):
                 chunk_ids = self._buffer[: self._chunk_size]
-                dict_of_training_examples["chunk_ids"].append(chunk_ids)
+                dict_of_training_examples["input_ids"].append(chunk_ids)
                 self._buffer = self._buffer[self._chunk_size :]
 
         return dict_of_training_examples
