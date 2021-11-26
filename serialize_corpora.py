@@ -54,14 +54,6 @@ def main():
 
     corpora = load_corpora(args.corpora_dir)
 
-    #####
-    from numpy.random import choice
-
-    total_size = len(corpora)
-    sample_size = int(total_size * 0.01)
-    corpora = corpora.select(indices=choice(range(total_size), sample_size))
-    #####
-
     dataset = corpora.map(
         lambda examples: processor(examples["text"]),
         num_proc=args.num_proc,
