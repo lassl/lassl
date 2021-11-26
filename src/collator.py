@@ -29,17 +29,16 @@ class DataCollatorForSOP(DataCollatorForLanguageModeling):
     def prepare_sop_from_examples(self, examples: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
         output_examples = []
         for example in examples:
-            _input_ids = example["input_ids"]
-            seq_length = len(_input_ids)
+            chunk_ids = example["chunk_ids"]
+            seq_length = len(chunk_ids)
             start, end = seq_length // 3, seq_length // 3 * 2
             split_position = random.randrange(start, end)
             reverse = random.random() < 0.5
+
             if reverse:
-                token_a = _input_ids[split_position:]
-                token_b = _input_ids[:split_position]
+                token_a, token_b = chunk_ids[split_position:], chunk_ids[:split_position]
             else:
-                token_a = _input_ids[:split_position]
-                token_b = _input_ids[split_position:]
+                token_a, token_b = chunk_ids[:split_position], chunk_ids[split_position:]
             
             input_ids = self.tokenizer.build_inputs_with_special_tokens(token_a, token_b)
             token_type_ids = self.tokenizer.create_token_type_ids_from_sequences(token_a, token_b)
