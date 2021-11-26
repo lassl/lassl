@@ -2,11 +2,15 @@ from dataclasses import dataclass, field
 
 from transformers import HfArgumentParser
 
-from src.preprocessing import RobertaProcessor
+from src.processing import (
+    RobertaProcessor,
+    AlbertProcessor,
+)
 from src.utils import load_corpora
 
-name_to_preprocessor = {
+name_to_processor = {
     "roberta": RobertaProcessor,
+    "albert": AlbertProcessor,
 }
 
 
@@ -16,7 +20,8 @@ class Arguments:
         default="roberta",
         metadata={
             "choices": [
-                "roberta",
+                "roberta-base",
+                "albert-base-v2",
             ]
         },
     )
@@ -43,13 +48,21 @@ class Arguments:
 def main():
     parser = HfArgumentParser(Arguments)
     args = parser.parse_args_into_dataclasses()[0]
-    preprocessor = name_to_preprocessor[args.model_name](
+    processor = name_to_processor[args.model_name](
         args.tokenizer_dir, args.max_length
     )
 
     corpora = load_corpora(args.corpora_dir)
+    
+    #####
+    from numpy.random import choice
+    total_size = len(corpora)
+    sample_size = int(total_size * 0.01)
+    corpora = corpora.select(indices=choice(range(total_size), sample_size))
+    #####
+
     dataset = corpora.map(
-        lambda examples: preprocessor.process(examples["text"]),
+        lambda examples: processor(examples["text"]),
         num_proc=args.num_proc,
         batched=True,
         batch_size=args.batch_size,
