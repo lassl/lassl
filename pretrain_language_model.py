@@ -1,7 +1,7 @@
 import logging
 import os
 from dataclasses import dataclass, field
-from src.collator import DataCollatorForSOP
+
 from transformers import (
     AutoConfig,
     AutoModelForPreTraining,
@@ -15,6 +15,7 @@ from transformers import (
 from transformers.trainer_utils import get_last_checkpoint
 
 from datasets import Dataset
+from src.collator import DataCollatorForSOP
 
 logger = logging.getLogger(__name__)
 
@@ -34,6 +35,7 @@ class ModelArguments:
         metadata={
             "choices": [
                 "roberta-base",
+                "gpt2",
                 "albert-base-v2",
             ]
         },
@@ -54,15 +56,19 @@ def main():
 
     if model_args.model_name in ["roberta-base"]:
         data_collator = DataCollatorForLanguageModeling(
-            tokenizer=tokenizer, mlm=True, mlm_probability=data_args.mlm_probability,
+            tokenizer=tokenizer,
+            mlm=True,
+            mlm_probability=data_args.mlm_probability,
         )
     elif model_args.model_name in ["gpt2"]:
         data_collator = DataCollatorForLanguageModeling(
-            tokenizer=tokenizer, mlm=False,
-            )
+            tokenizer=tokenizer,
+            mlm=False,
+        )
     elif model_args.model_name in ["albert-base-v2"]:
         data_collator = DataCollatorForSOP(
-            tokenizer=tokenizer, mlm_probability=data_args.mlm_probability,
+            tokenizer=tokenizer,
+            mlm_probability=data_args.mlm_probability,
         )
     else:
         raise NotImplementedError
@@ -112,6 +118,11 @@ def main():
     trainer.log_metrics("train", metrics)
     trainer.save_metrics("train", metrics)
     trainer.save_state()
+
+
+def _mp_fn(index):
+    # For xla_spawn (TPUs)
+    main()
 
 
 if __name__ == "__main__":

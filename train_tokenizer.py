@@ -5,6 +5,14 @@ from transformers import AutoTokenizer, HfArgumentParser
 
 from src.utils import batch_iterator, load_corpora
 
+name_to_predefined_model = {
+    "bert": "bert-base-uncased",
+    "gpt2": "gpt2",
+    "roberta": "roberta-base",
+    "albert": "albert-base-v2",
+    "electra": "google/electra-small-discriminator",
+}
+
 
 @dataclass
 class DataArguments:
@@ -22,14 +30,14 @@ class DataArguments:
 @dataclass
 class ModelArguments:
     model_name: str = field(
-        default="bert",
+        default="roberta",
         metadata={
             "choices": [
                 "bert",
                 "gpt2",
-                "roberta-base",
-                "albert-base-v2",
-                "google/electra-small-discriminator",
+                "roberta",
+                "albert",
+                "electra",
             ]
         },
     )
@@ -51,7 +59,10 @@ def main():
         sample_size = int(total_size * data_args.sampling_ratio)
         sampled_corpora = corpora.select(indices=choice(range(total_size), sample_size))
 
-    tokenizer = AutoTokenizer.from_pretrained(model_args.model_name)
+    tokenizer = AutoTokenizer.from_pretrained(
+        name_to_predefined_model[model_args.model_name]
+    )
+
     data_iterator = batch_iterator(sampled_corpora, batch_size=data_args.batch_size)
     tokenizer = tokenizer.train_new_from_iterator(
         data_iterator,

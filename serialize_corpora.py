@@ -2,14 +2,12 @@ from dataclasses import dataclass, field
 
 from transformers import HfArgumentParser
 
-from src.processing import (
-    RobertaProcessor,
-    AlbertProcessor,
-)
+from src.processing import AlbertProcessor, GPT2Processor, RobertaProcessor
 from src.utils import load_corpora
 
 name_to_processor = {
     "roberta": RobertaProcessor,
+    "gpt2": GPT2Processor,
     "albert": AlbertProcessor,
 }
 
@@ -20,8 +18,9 @@ class Arguments:
         default="roberta",
         metadata={
             "choices": [
-                "roberta-base",
-                "albert-base-v2",
+                "roberta",
+                "gpt2",
+                "albert",
             ]
         },
     )
@@ -43,19 +42,21 @@ class Arguments:
     writer_batch_size: int = field(
         default=1000,
     )
+    load_from_cache_file: bool = field(
+        default=True,
+    )
 
 
 def main():
     parser = HfArgumentParser(Arguments)
     args = parser.parse_args_into_dataclasses()[0]
-    processor = name_to_processor[args.model_name](
-        args.tokenizer_dir, args.max_length
-    )
+    processor = name_to_processor[args.model_name](args.tokenizer_dir, args.max_length)
 
     corpora = load_corpora(args.corpora_dir)
-    
+
     #####
     from numpy.random import choice
+
     total_size = len(corpora)
     sample_size = int(total_size * 0.01)
     corpora = corpora.select(indices=choice(range(total_size), sample_size))
@@ -67,6 +68,7 @@ def main():
         batched=True,
         batch_size=args.batch_size,
         writer_batch_size=args.writer_batch_size,
+        load_from_cache_file=args.load_from_cache_file,
         remove_columns=corpora.column_names,
     )
     dataset.save_to_disk("datasets/" + args.model_name)
