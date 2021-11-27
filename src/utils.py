@@ -43,7 +43,7 @@ def load_corpora(dir_path, text_type_per_line="docu"):
             SENTENCE_PER_LINE_SCRIPT, data_files=all_file_paths, split="train"
         )
     else:
-        raise NotImplementedError("Implementing loading scripts along your text type.")
+        raise NotImplementedError(f"Implementing loading scripts along with your text type (docu, sent), but got {text_type_per_line}")
 
 
 def get_params_without_weight_decay_ln(
