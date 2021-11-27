@@ -64,6 +64,7 @@ def main():
         remove_columns=corpora.column_names,
     )
     dataset.save_to_disk("datasets/" + args.model_name)
+    processor.save_tokenizer("datasets/" + args.model_name)
 
 
 if __name__ == "__main__":
