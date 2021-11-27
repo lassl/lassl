@@ -1,5 +1,5 @@
-from typing import Dict, List
 from abc import ABC, abstractmethod
+from typing import Dict, List
 
 from transformers import AutoTokenizer
 
@@ -23,7 +23,7 @@ class RobertaProcessor(BaseProcessor):
 
     def __call__(self, list_of_str: List[str]) -> Dict[str, List[int]]:
         dict_of_training_examples: Dict[str, List[int]] = {}
-        
+
         list_of_input_ids: List[List[int]] = self._tokenizer(
             list_of_str,
             padding=False,
@@ -114,7 +114,7 @@ class AlbertProcessor(BaseProcessor):
 
     def __call__(self, list_of_str: List[str]) -> Dict[str, List[int]]:
         dict_of_training_examples: Dict[str, List[int]] = {"input_ids": []}
-        
+
         list_of_input_ids: List[List[int]] = self._tokenizer(
             list_of_str,
             padding=False,
@@ -123,7 +123,7 @@ class AlbertProcessor(BaseProcessor):
             return_special_tokens_mask=False,
             verbose=False,
         )["input_ids"]
-        
+
         for input_ids in list_of_input_ids:
             input_ids += [self._tokenizer.eos_token_id]
             self._buffer.extend(input_ids)
