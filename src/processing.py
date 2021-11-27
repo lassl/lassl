@@ -11,6 +11,9 @@ class BaseProcessor(ABC):
         self._chunk_size = max_length
         self._buffer = []
 
+    def save_tokenizer(self, path: str) -> None:
+        self._tokenizer.save_pretrained(path)
+
     @abstractmethod
     def __call__(self, list_of_str: List[str]) -> Dict[str, List[int]]:
         pass
