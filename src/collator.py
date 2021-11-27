@@ -50,10 +50,8 @@ class DataCollatorForSOP(DataCollatorForLanguageModeling):
                 token_a = chunk_ids[split_position:]
                 token_b = chunk_ids[:split_position]
             else:
-                token_a, token_b = (
-                    chunk_ids[:split_position],
-                    chunk_ids[split_position:],
-                )
+                token_a = chunk_ids[:split_position]
+                token_b = chunk_ids[split_position:]
 
             input_ids = self.tokenizer.build_inputs_with_special_tokens(
                 token_a, token_b
