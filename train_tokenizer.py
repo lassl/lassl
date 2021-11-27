@@ -30,7 +30,7 @@ class DataArguments:
 @dataclass
 class ModelArguments:
     model_name: str = field(
-        default="bert",
+        default="roberta",
         metadata={
             "choices": [
                 "bert",

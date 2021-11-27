@@ -2,12 +2,13 @@ from dataclasses import dataclass, field
 
 from transformers import HfArgumentParser
 
-from src.processing import GPT2Processor, RobertaProcessor
+from src.processing import AlbertProcessor, GPT2Processor, RobertaProcessor
 from src.utils import load_corpora
 
-name_to_preprocessor = {
+name_to_processor = {
     "roberta": RobertaProcessor,
     "gpt2": GPT2Processor,
+    "albert": AlbertProcessor,
 }
 
 
@@ -19,6 +20,7 @@ class Arguments:
             "choices": [
                 "roberta",
                 "gpt2",
+                "albert",
             ]
         },
     )
@@ -48,13 +50,12 @@ class Arguments:
 def main():
     parser = HfArgumentParser(Arguments)
     args = parser.parse_args_into_dataclasses()[0]
-    preprocessor = name_to_preprocessor[args.model_name](
-        args.tokenizer_dir, args.max_length
-    )
+    processor = name_to_processor[args.model_name](args.tokenizer_dir, args.max_length)
 
     corpora = load_corpora(args.corpora_dir)
+
     dataset = corpora.map(
-        lambda examples: preprocessor(examples["text"]),
+        lambda examples: processor(examples["text"]),
         num_proc=args.num_proc,
         batched=True,
         batch_size=args.batch_size,
