@@ -47,10 +47,8 @@ class DataCollatorForSOP(DataCollatorForLanguageModeling):
             reverse = random.random() < 0.5
 
             if reverse:
-                token_a, token_b = (
-                    chunk_ids[split_position:],
-                    chunk_ids[:split_position],
-                )
+                token_a = chunk_ids[split_position:]
+                token_b = chunk_ids[:split_position]
             else:
                 token_a, token_b = (
                     chunk_ids[:split_position],
