@@ -26,7 +26,7 @@ def load_corpora(dir_path, text_type_per_line="docu"):
         ]
 
         if not list_of_file_paths:
-            raise ("source files must have 'json' extension.")
+            raise Exception("source files must have 'json' extension.")
 
         all_file_paths.extend(list_of_file_paths)
         return load_dataset("json", data_files=all_file_paths, split="train")
@@ -36,7 +36,7 @@ def load_corpora(dir_path, text_type_per_line="docu"):
             str(file_path) for file_path in corpora_dir.rglob("*.txt")
         ]
         if not list_of_file_paths:
-            raise ("source files must have 'txt' extension.")
+            raise Exception("source files must have 'txt' extension.")
 
         all_file_paths.extend(list_of_file_paths)
         return load_dataset(
