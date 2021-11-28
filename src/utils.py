@@ -38,7 +38,7 @@ def load_corpora(dir_path, text_type_per_line="docu"):
 
         all_file_paths.extend(list_of_file_paths)
         return load_dataset(
-            SENTENCE_PER_LINE_SCRIPT, data_files=all_file_paths, split="train"
+            SENTENCE_PER_LINE_SCRIPT, data_files=list_of_file_paths, split="train"
         )
     else:
         raise NotImplementedError(f"Implementing loading scripts along with your text type (docu, sent), but got {text_type_per_line}")
