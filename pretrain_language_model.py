@@ -1,13 +1,14 @@
+import json
 import logging
 import os
-from dataclasses import dataclass, field
+from argparse import ArgumentParser
 
+from omegaconf import OmegaConf
 from transformers import (
-    AutoConfig,
+    CONFIG_MAPPING,
     AutoModelForPreTraining,
     AutoTokenizer,
     DataCollatorForLanguageModeling,
-    HfArgumentParser,
     Trainer,
     TrainingArguments,
     set_seed,
@@ -20,52 +21,43 @@ from src.collator import DataCollatorForSOP
 logger = logging.getLogger(__name__)
 
 
-@dataclass
-class DataArguments:
-    data_dir: str = field(default="datasets/roberta")
-    mlm_probability: float = field(
-        default=0.15,
-    )
-
-
-@dataclass
-class ModelArguments:
-    model_name: str = field(
-        default="roberta-base",
-        metadata={
-            "choices": [
-                "roberta-base",
-                "gpt2",
-                "albert-base-v2",
-            ]
-        },
-    )
-    tokenizer_dir: str = field(
-        default="tokenizers/roberta",
-    )
+def get_main_args():
+    parser = ArgumentParser()
+    parser.add_argument("--config_path", required=True)
+    args = parser.parse_args()
+    return args
 
 
 def main():
-    parser = HfArgumentParser((DataArguments, ModelArguments, TrainingArguments))
-    data_args, model_args, training_args = parser.parse_args_into_dataclasses()
+    args = get_main_args()
+    nested_args = OmegaConf.create(
+        json.load(open(args.config_path, mode="r", encoding="utf-8"))
+    )
+
+    model_args = nested_args.model
+    data_args = nested_args.data
+    training_args = TrainingArguments(**nested_args.training)
+
     dataset = Dataset.load_from_disk(data_args.data_dir)
-    tokenizer = AutoTokenizer.from_pretrained(model_args.tokenizer_dir)
-    config = AutoConfig.from_pretrained(model_args.model_name)
-    model = AutoModelForPreTraining.from_config(config)
+    tokenizer = AutoTokenizer.from_pretrained(data_args.data_dir)
+
+    model_config = CONFIG_MAPPING[model_args.model_type](**model_args)
+
+    model = AutoModelForPreTraining.from_config(model_config)
     model.resize_token_embeddings(tokenizer.vocab_size)
 
-    if model_args.model_name in ["roberta-base"]:
+    if model_args.model_type in ["roberta"]:
         data_collator = DataCollatorForLanguageModeling(
             tokenizer=tokenizer,
             mlm=True,
             mlm_probability=data_args.mlm_probability,
         )
-    elif model_args.model_name in ["gpt2"]:
+    elif model_args.model_type in ["gpt2"]:
         data_collator = DataCollatorForLanguageModeling(
             tokenizer=tokenizer,
             mlm=False,
         )
-    elif model_args.model_name in ["albert-base-v2"]:
+    elif model_args.model_type in ["albert"]:
         data_collator = DataCollatorForSOP(
             tokenizer=tokenizer,
             mlm_probability=data_args.mlm_probability,
