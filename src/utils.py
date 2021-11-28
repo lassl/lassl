@@ -28,7 +28,6 @@ def load_corpora(dir_path, text_type_per_line="docu"):
 
         return load_dataset("json", data_files=list_of_file_paths, split="train")
     elif text_type_per_line == "sent":
-        # sent
         list_of_file_paths = [
             str(file_path) for file_path in corpora_dir.rglob("*.txt")
         ]
