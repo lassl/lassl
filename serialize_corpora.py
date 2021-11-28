@@ -30,6 +30,15 @@ class Arguments:
     corpora_dir: str = field(
         default="corpora/kowiki",
     )
+    text_type_per_line: str = field(
+        default="docu",
+        metadata={
+            "choices": [
+                "docu",
+                "sent",
+            ]
+        },
+    )
     max_length: int = field(
         default=512,
     )
@@ -52,7 +61,7 @@ def main():
     args = parser.parse_args_into_dataclasses()[0]
     processor = name_to_processor[args.model_name](args.tokenizer_dir, args.max_length)
 
-    corpora = load_corpora(args.corpora_dir)
+    corpora = load_corpora(args.corpora_dir, text_type_per_line=args.text_type_per_line)
 
     dataset = corpora.map(
         lambda examples: processor(examples["text"]),
