@@ -1,10 +1,10 @@
-import glob
-import os
-import datasets
-
+from pathlib import Path
 from typing import Generator, Union
 
+import datasets
 from datasets import load_dataset
+
+SENTENCE_PER_LINE_SCRIPT = str(Path("./src/scripts/sentence_per_line.py").absolute())
 
 
 def batch_iterator(
@@ -16,41 +16,29 @@ def batch_iterator(
         yield dataset[i : i + batch_size][key]
 
 
-def find_files(data_dir, data_files):
-    if data_dir is None and data_files is None:
-        raise ValueError("At least one of data_files or data_dir must be specified")
-    elif data_dir is not None and data_files is None:
-        pathname = data_dir + "/**/*.*"
-        data_files = glob.glob(pathname, recursive=True)
-        data_files = [
-            p for p in data_files if p.endswith(".txt") or p.endswith(".json")
+def load_corpora(dir_path, text_type_per_line="docu"):
+    corpora_dir = Path(dir_path).absolute()
+    if text_type_per_line == "docu":
+        list_of_file_paths = [
+            str(file_path) for file_path in corpora_dir.rglob("*.json")
         ]
-    elif data_dir is not None and data_files is not None:
-        if isinstance(data_files, str):
-            data_files = [data_files]
-        data_files = [os.path.join(data_dir, d) for d in data_files]
-    return data_files
 
+        if not list_of_file_paths:
+            raise Exception("source files must have 'json' extension.")
 
-def load_corpora(data_dir, cache_dir=None, split="train", data_files=None):
-    data_files = find_files(data_dir, data_files)
-    if data_files[0].endswith(".txt"):
+        return load_dataset("json", data_files=list_of_file_paths, split="train")
+    elif text_type_per_line == "sent":
+        list_of_file_paths = [
+            str(file_path) for file_path in corpora_dir.rglob("*.txt")
+        ]
+        if not list_of_file_paths:
+            raise Exception("source files must have 'txt' extension.")
+
         return load_dataset(
-            "text",
-            data_dir=data_dir,
-            data_files=data_files,
-            cache_dir=cache_dir,
-            split=split,
+            SENTENCE_PER_LINE_SCRIPT, data_files=list_of_file_paths, split="train"
         )
-    elif data_files[0].endswith(".json"):
-        return load_dataset(
-            "json",
-            data_dir=data_dir,
-            data_files=data_files,
-            cache_dir=cache_dir,
-            split=split,
-        )
-    raise ValueError("File formats other than '.txt' and '.json' are not supported yet")
+    else:
+        raise NotImplementedError(f"Implementing loading scripts along with your text type (docu, sent), but got {text_type_per_line}")
 
 
 def get_params_without_weight_decay_ln(

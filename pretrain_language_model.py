@@ -4,8 +4,7 @@ from dataclasses import dataclass, field
 
 from transformers import (
     AutoConfig,
-    AutoModelForCausalLM,
-    AutoModelForMaskedLM,
+    AutoModelForPreTraining,
     AutoTokenizer,
     DataCollatorForLanguageModeling,
     HfArgumentParser,
@@ -16,6 +15,7 @@ from transformers import (
 from transformers.trainer_utils import get_last_checkpoint
 
 from datasets import Dataset
+from src.collator import DataCollatorForSOP
 
 logger = logging.getLogger(__name__)
 
@@ -35,6 +35,8 @@ class ModelArguments:
         metadata={
             "choices": [
                 "roberta-base",
+                "gpt2",
+                "albert-base-v2",
             ]
         },
     )
@@ -49,17 +51,27 @@ def main():
     dataset = Dataset.load_from_disk(data_args.data_dir)
     tokenizer = AutoTokenizer.from_pretrained(model_args.tokenizer_dir)
     config = AutoConfig.from_pretrained(model_args.model_name)
+    model = AutoModelForPreTraining.from_config(config)
+    model.resize_token_embeddings(tokenizer.vocab_size)
+
     if model_args.model_name in ["roberta-base"]:
-        model = AutoModelForMaskedLM.from_config(config)
         data_collator = DataCollatorForLanguageModeling(
-            tokenizer=tokenizer, mlm_probability=data_args.mlm_probability
+            tokenizer=tokenizer,
+            mlm=True,
+            mlm_probability=data_args.mlm_probability,
         )
     elif model_args.model_name in ["gpt2"]:
-        model = AutoModelForCausalLM.from_config(config)
-        data_collator = DataCollatorForLanguageModeling(tokenizer=tokenizer, mlm=False)
+        data_collator = DataCollatorForLanguageModeling(
+            tokenizer=tokenizer,
+            mlm=False,
+        )
+    elif model_args.model_name in ["albert-base-v2"]:
+        data_collator = DataCollatorForSOP(
+            tokenizer=tokenizer,
+            mlm_probability=data_args.mlm_probability,
+        )
     else:
         raise NotImplementedError
-
     trainer = Trainer(
         model=model,
         args=training_args,
@@ -100,11 +112,7 @@ def main():
     trainer.save_model()  # Saves the tokenizer too for easy upload
     metrics = train_result.metrics
 
-    max_train_samples = (
-        data_args.max_train_samples
-        if data_args.max_train_samples is not None
-        else len(dataset)
-    )
+    max_train_samples = len(dataset)
     metrics["train_samples"] = min(max_train_samples, len(dataset))
 
     trainer.log_metrics("train", metrics)
