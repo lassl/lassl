@@ -37,6 +37,7 @@ def main():
     dataset = Dataset.load_from_disk(data_args.data_dir)
     tokenizer = AutoTokenizer.from_pretrained(data_args.data_dir)
 
+    assert model_args.model_type in CONFIG_MAPPING.keys(), f"model_args.model_type must be one of {CONFIG_MAPPING.keys()}"
     model_config = CONFIG_MAPPING[model_args.model_type](**model_args)
     model = AutoModelForPreTraining.from_config(model_config)
     model.resize_token_embeddings(tokenizer.vocab_size)
