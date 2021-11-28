@@ -36,7 +36,6 @@ def load_corpora(dir_path, text_type_per_line="docu"):
         if not list_of_file_paths:
             raise Exception("source files must have 'txt' extension.")
 
-        all_file_paths.extend(list_of_file_paths)
         return load_dataset(
             SENTENCE_PER_LINE_SCRIPT, data_files=list_of_file_paths, split="train"
         )
