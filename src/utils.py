@@ -26,8 +26,7 @@ def load_corpora(dir_path, text_type_per_line="docu"):
         if not list_of_file_paths:
             raise Exception("source files must have 'json' extension.")
 
-        all_file_paths.extend(list_of_file_paths)
-        return load_dataset("json", data_files=all_file_paths, split="train")
+        return load_dataset("json", data_files=list_of_file_paths, split="train")
     elif text_type_per_line == "sent":
         # sent
         list_of_file_paths = [
