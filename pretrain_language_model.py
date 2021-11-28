@@ -1,4 +1,3 @@
-import json
 import logging
 import os
 from argparse import ArgumentParser
@@ -30,10 +29,7 @@ def get_main_args():
 
 def main():
     args = get_main_args()
-    nested_args = OmegaConf.create(
-        json.load(open(args.config_path, mode="r", encoding="utf-8"))
-    )
-
+    nested_args = OmegaConf.load(args.config_path)
     model_args = nested_args.model
     data_args = nested_args.data
     training_args = TrainingArguments(**nested_args.training)
@@ -42,7 +38,6 @@ def main():
     tokenizer = AutoTokenizer.from_pretrained(data_args.data_dir)
 
     model_config = CONFIG_MAPPING[model_args.model_type](**model_args)
-
     model = AutoModelForPreTraining.from_config(model_config)
     model.resize_token_embeddings(tokenizer.vocab_size)
 
