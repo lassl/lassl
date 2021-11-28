@@ -13,6 +13,7 @@ tokenizers = "^0.10.3"
 black = "^21.11b1"
 isort = "^5.10.1"
 torch = "^1.10.0"
+omegaconf = "^2.1.1"
 
 [tool.poetry.dev-dependencies]
 
