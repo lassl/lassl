@@ -18,8 +18,6 @@ def batch_iterator(
 
 def load_corpora(dir_path, text_type_per_line="docu"):
     corpora_dir = Path(dir_path).absolute()
-    all_file_paths = []
-
     if text_type_per_line == "docu":
         list_of_file_paths = [
             str(file_path) for file_path in corpora_dir.rglob("*.json")
