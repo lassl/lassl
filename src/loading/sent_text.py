@@ -10,7 +10,7 @@ logger = datasets.utils.logging.get_logger(__name__)
 
 
 @dataclass
-class SentencePerLineConfig(datasets.BuilderConfig):
+class SentTextConfig(datasets.BuilderConfig):
     """BuilderConfig for text files."""
 
     features: Optional[datasets.Features] = None
@@ -19,8 +19,8 @@ class SentencePerLineConfig(datasets.BuilderConfig):
     keep_linebreaks: bool = False
 
 
-class SentencePerLine(datasets.ArrowBasedBuilder):
-    BUILDER_CONFIG_CLASS = SentencePerLineConfig
+class SentText(datasets.ArrowBasedBuilder):
+    BUILDER_CONFIG_CLASS = SentTextConfig
 
     def _info(self):
         return datasets.DatasetInfo(features=self.config.features)
