@@ -52,9 +52,7 @@ class RobertaProcessor(BaseProcessor):
                     add_special_tokens=True,
                 )
 
-                training_example[
-                    "special_tokens_mask"
-                ] = self._tokenizer.get_special_tokens_mask(
+                training_example["special_tokens_mask"] = self._tokenizer.get_special_tokens_mask(
                     training_example["input_ids"], already_has_special_tokens=True
                 )
 

@@ -61,9 +61,7 @@ class Arguments:
 def main():
     parser = HfArgumentParser(Arguments)
     args = parser.parse_args_into_dataclasses()[0]
-    processor = model_type_to_processor[args.model_type](
-        args.tokenizer_dir, args.max_length
-    )
+    processor = model_type_to_processor[args.model_type](args.tokenizer_dir, args.max_length)
 
     corpora = load_corpora(args.corpora_dir, corpus_type=args.corpus_type)
 

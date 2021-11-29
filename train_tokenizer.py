@@ -70,9 +70,7 @@ def main():
         sample_size = int(total_size * data_args.sampling_ratio)
         sampled_corpora = corpora.select(indices=choice(range(total_size), sample_size))
 
-    tokenizer = AutoTokenizer.from_pretrained(
-        model_type_to_predefined_model[model_args.model_type]
-    )
+    tokenizer = AutoTokenizer.from_pretrained(model_type_to_predefined_model[model_args.model_type])
 
     data_iterator = batch_iterator(sampled_corpora, batch_size=data_args.batch_size)
     tokenizer = tokenizer.train_new_from_iterator(
