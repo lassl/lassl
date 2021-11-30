@@ -61,7 +61,7 @@ class ModelArguments:
     min_frequency: int = field(
         default=2,
     )
-    additinal_special_tokens: Optional[List[str]] = field(
+    additional_special_tokens: Optional[List[str]] = field(
         default=None,
     )
 
