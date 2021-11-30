@@ -79,19 +79,19 @@ def main():
     tokenizer = AutoTokenizer.from_pretrained(model_type_to_predefined_model[model_args.model_type])
     data_iterator = batch_iterator(sampled_corpora, batch_size=data_args.batch_size)
 
-    if model_args.additinal_special_tokens:
-        assert len(model_args.additinal_special_tokens) == len(
-            set(model_args.additinal_special_tokens)
+    if model_args.additional_special_tokens:
+        assert len(model_args.additional_special_tokens) == len(
+            set(model_args.additional_special_tokens)
         ), "Each additional special tokens must be unique."
         assert not set(tokenizer.all_special_tokens).intersection(
-            set(model_args.additinal_special_tokens)
+            set(model_args.additional_special_tokens)
         ), "Each additional special tokens are not of default special tokens from tokenizer."
 
         tokenizer = tokenizer.train_new_from_iterator(
             data_iterator,
             vocab_size=model_args.vocab_size,
             min_frequency=model_args.min_frequency,
-            new_special_tokens=model_args.additinal_special_tokens,
+            new_special_tokens=model_args.additional_special_tokens,
         )
     else:
         tokenizer = tokenizer.train_new_from_iterator(
