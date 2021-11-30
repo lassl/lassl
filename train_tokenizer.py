@@ -1,4 +1,5 @@
 from dataclasses import dataclass, field
+from typing import List, Optional
 
 from numpy.random import choice
 from transformers import AutoTokenizer, HfArgumentParser
@@ -6,7 +7,8 @@ from transformers import AutoTokenizer, HfArgumentParser
 from src.utils import batch_iterator, load_corpora
 
 model_type_to_predefined_model = {
-    "bert": "bert-base-uncased",
+    "bert-uncased": "bert-base-uncased",
+    "bert-cased": "bert-base-cased",
     "gpt2": "gpt2",
     "roberta": "roberta-base",
     "albert": "albert-base-v2",
@@ -44,7 +46,8 @@ class ModelArguments:
         default="roberta",
         metadata={
             "choices": [
-                "bert",
+                "bert-uncased",
+                "bert-cased",
                 "gpt2",
                 "roberta",
                 "albert",
@@ -57,6 +60,9 @@ class ModelArguments:
     )
     min_frequency: int = field(
         default=2,
+    )
+    additional_special_tokens: Optional[List[str]] = field(
+        default=None,
     )
 
 
@@ -71,13 +77,28 @@ def main():
         sampled_corpora = corpora.select(indices=choice(range(total_size), sample_size))
 
     tokenizer = AutoTokenizer.from_pretrained(model_type_to_predefined_model[model_args.model_type])
-
     data_iterator = batch_iterator(sampled_corpora, batch_size=data_args.batch_size)
-    tokenizer = tokenizer.train_new_from_iterator(
-        data_iterator,
-        vocab_size=model_args.vocab_size,
-        min_frequency=model_args.min_frequency,
-    )
+
+    if model_args.additional_special_tokens:
+        assert len(model_args.additional_special_tokens) == len(
+            set(model_args.additional_special_tokens)
+        ), "Each additional special tokens must be unique."
+        assert not set(tokenizer.all_special_tokens).intersection(
+            set(model_args.additional_special_tokens)
+        ), "Each additional special tokens are not of default special tokens from tokenizer."
+
+        tokenizer = tokenizer.train_new_from_iterator(
+            data_iterator,
+            vocab_size=model_args.vocab_size,
+            min_frequency=model_args.min_frequency,
+            new_special_tokens=model_args.additional_special_tokens,
+        )
+    else:
+        tokenizer = tokenizer.train_new_from_iterator(
+            data_iterator,
+            vocab_size=model_args.vocab_size,
+            min_frequency=model_args.min_frequency,
+        )
     tokenizer.save_pretrained("tokenizers/" + model_args.model_type)
 
 
