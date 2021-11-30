@@ -5,7 +5,7 @@ from transformers import HfArgumentParser
 from src.processing import AlbertProcessor, GPT2Processor, RobertaProcessor
 from src.utils import load_corpora
 
-name_to_processor = {
+model_type_to_processor = {
     "roberta": RobertaProcessor,
     "gpt2": GPT2Processor,
     "albert": AlbertProcessor,
@@ -14,7 +14,7 @@ name_to_processor = {
 
 @dataclass
 class Arguments:
-    model_name: str = field(
+    model_type: str = field(
         default="roberta",
         metadata={
             "choices": [
@@ -30,12 +30,14 @@ class Arguments:
     corpora_dir: str = field(
         default="corpora/kowiki",
     )
-    text_type_per_line: str = field(
-        default="docu",
+    corpus_type: str = field(
+        default="docu_json",
         metadata={
             "choices": [
-                "docu",
-                "sent",
+                "docu_text",
+                "docu_json",
+                "sent_text",
+                "sent_json",
             ]
         },
     )
@@ -59,9 +61,9 @@ class Arguments:
 def main():
     parser = HfArgumentParser(Arguments)
     args = parser.parse_args_into_dataclasses()[0]
-    processor = name_to_processor[args.model_name](args.tokenizer_dir, args.max_length)
+    processor = model_type_to_processor[args.model_type](args.tokenizer_dir, args.max_length)
 
-    corpora = load_corpora(args.corpora_dir, text_type_per_line=args.text_type_per_line)
+    corpora = load_corpora(args.corpora_dir, corpus_type=args.corpus_type)
 
     dataset = corpora.map(
         lambda examples: processor(examples["text"]),
@@ -72,8 +74,8 @@ def main():
         load_from_cache_file=args.load_from_cache_file,
         remove_columns=corpora.column_names,
     )
-    dataset.save_to_disk("datasets/" + args.model_name)
-    processor.save_tokenizer("datasets/" + args.model_name)
+    dataset.save_to_disk("datasets/" + args.model_type)
+    processor.save_tokenizer("datasets/" + args.model_type)
 
 
 if __name__ == "__main__":

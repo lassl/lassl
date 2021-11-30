@@ -4,7 +4,7 @@ from typing import Generator, Union
 import datasets
 from datasets import load_dataset
 
-SENTENCE_PER_LINE_SCRIPT = str(Path("./src/scripts/sentence_per_line.py").absolute())
+SENT_TEXT_SCRIPT = str(Path("./src/loading/sent_text.py").absolute())
 
 
 def batch_iterator(
@@ -16,42 +16,38 @@ def batch_iterator(
         yield dataset[i : i + batch_size][key]
 
 
-def load_corpora(dir_path, text_type_per_line="docu"):
+def load_corpora(dir_path, corpus_type="docu_json"):
     corpora_dir = Path(dir_path).absolute()
-    if text_type_per_line == "docu":
-        list_of_file_paths = [
-            str(file_path) for file_path in corpora_dir.rglob("*.json")
-        ]
+    extension = corpus_type.split("_")[-1]
 
+    if extension == "json":
+        list_of_file_paths = [str(file_path) for file_path in corpora_dir.rglob("*.json")]
         if not list_of_file_paths:
-            raise Exception("source files must have 'json' extension.")
-
-        return load_dataset("json", data_files=list_of_file_paths, split="train")
-    elif text_type_per_line == "sent":
-        list_of_file_paths = [
-            str(file_path) for file_path in corpora_dir.rglob("*.txt")
-        ]
+            raise Exception("Check file extensions. Your files are not *.json")
+    elif extension == "text":
+        list_of_file_paths = [str(file_path) for file_path in corpora_dir.rglob("*.txt")]
         if not list_of_file_paths:
-            raise Exception("source files must have 'txt' extension.")
-
-        return load_dataset(
-            SENTENCE_PER_LINE_SCRIPT, data_files=list_of_file_paths, split="train"
-        )
+            raise Exception("Check file extensions. Your files are not *.txt")
     else:
-        raise NotImplementedError(
-            f"Implementing loading scripts along with your text type (docu, sent), but got {text_type_per_line}"
-        )
+        raise Exception(f"{extension} is not supported.")
+
+    if corpus_type == "docu_text":
+        return load_dataset("text", data_files=list_of_file_paths, split="train")
+    elif corpus_type == "docu_json":
+        return load_dataset("json", data_files=list_of_file_paths, split="train")
+    elif corpus_type == "sent_text":
+        return load_dataset(SENT_TEXT_SCRIPT, data_files=list_of_file_paths, split="train")
+    elif corpus_type == "sent_json":
+        raise NotImplementedError("sent_json will be supported soon.")
+    else:
+        raise ValueError(f"{corpus_type} must be one of ['docu_text', 'docu_json', 'sent_text', 'sent_json']")
 
 
-def get_params_without_weight_decay_ln(
-    named_params: Union[list, Generator], weight_decay: float = 0.1
-):
+def get_params_without_weight_decay_ln(named_params: Union[list, Generator], weight_decay: float = 0.1):
     no_decay = ["bias", "LayerNorm.weight"]
     optimizer_grouped_parameters = [
         {
-            "params": [
-                p for n, p in named_params if not any(nd in n for nd in no_decay)
-            ],
+            "params": [p for n, p in named_params if not any(nd in n for nd in no_decay)],
             "weight_decay": weight_decay,
         },
         {
