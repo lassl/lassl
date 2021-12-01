@@ -2,10 +2,16 @@ from dataclasses import dataclass, field
 
 from transformers import HfArgumentParser
 
-from src.processing import AlbertProcessor, GPT2Processor, RobertaProcessor
+from src.processing import (
+    AlbertProcessor,
+    BertProcessor,
+    GPT2Processor,
+    RobertaProcessor,
+)
 from src.utils import load_corpora
 
 model_type_to_processor = {
+    "bert": BertProcessor,
     "roberta": RobertaProcessor,
     "gpt2": GPT2Processor,
     "albert": AlbertProcessor,
@@ -18,6 +24,7 @@ class Arguments:
         default="roberta",
         metadata={
             "choices": [
+                "bert",
                 "roberta",
                 "gpt2",
                 "albert",

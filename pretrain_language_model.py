@@ -15,7 +15,7 @@ from transformers import (
 from transformers.trainer_utils import get_last_checkpoint
 
 from datasets import Dataset
-from src.collator import DataCollatorForSOP
+from src.collator import DataCollatorForBert, DataCollatorForSOP
 
 logger = logging.getLogger(__name__)
 
@@ -44,7 +44,13 @@ def main():
     model = AutoModelForPreTraining.from_config(model_config)
     model.resize_token_embeddings(tokenizer.vocab_size)
 
-    if model_args.model_type in ["roberta"]:
+    if model_args.model_type in ["bert"]:
+        data_collator = DataCollatorForBert(
+            tokenizer=tokenizer,
+            mlm_probability=data_args.mlm_probability,
+        )
+
+    elif model_args.model_type in ["roberta"]:
         data_collator = DataCollatorForLanguageModeling(
             tokenizer=tokenizer,
             mlm=True,
@@ -86,7 +92,6 @@ def main():
 
     # Set seed before initializing model.
     set_seed(training_args.seed)
-
     checkpoint = None
     if training_args.resume_from_checkpoint is not None:
         checkpoint = training_args.resume_from_checkpoint
