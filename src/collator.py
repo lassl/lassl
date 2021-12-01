@@ -28,23 +28,7 @@ class DataCollatorForBertWithSOP(DataCollatorForWholeWordMask):
     def __call__(self, examples: List[Dict[str, Any]]) -> Dict[str, Any]:
         examples = self.prepare_sop_from_examples(examples)
         batch = self.tokenizer.pad(examples, return_tensors="pt", pad_to_multiple_of=self.pad_to_multiple_of)
-
-        mask_labels = []
-        for e in examples:
-            ref_tokens = []
-            for id in tolist(e["input_ids"]):
-                token = self.tokenizer._convert_id_to_token(id)
-                ref_tokens.append(token)
-
-            # For Chinese tokens, we need extra inf to mark sub-word, e.g [喜,欢]-> [喜，##欢]
-            if "chinese_ref" in e:
-                ref_pos = tolist(e["chinese_ref"])
-                len_seq = len(e["input_ids"])
-                for i in range(len_seq):
-                    if i in ref_pos:
-                        ref_tokens[i] = "##" + ref_tokens[i]
-            mask_labels.append(self._whole_word_mask(ref_tokens))
-        batch_mask = _torch_collate_batch(mask_labels, self.tokenizer, pad_to_multiple_of=self.pad_to_multiple_of)
+        batch_mask = batch.pop("mask_label")
         batch["input_ids"], batch["labels"] = self.torch_mask_tokens(batch["input_ids"], batch_mask)
         return batch
 
@@ -67,12 +51,15 @@ class DataCollatorForBertWithSOP(DataCollatorForWholeWordMask):
             input_ids = self.tokenizer.build_inputs_with_special_tokens(token_a, token_b)
             token_type_ids = self.tokenizer.create_token_type_ids_from_sequences(token_a, token_b)
             sentence_order_label = 1 if reverse else 0
+            ref_tokens = self.tokenizer.convert_ids_to_tokens(input_ids)
+            mask_label = self._whole_word_mask(ref_tokens)
 
             output_examples.append(
                 {
                     "input_ids": input_ids,
                     "token_type_ids": token_type_ids,
                     "next_sentence_label": sentence_order_label,
+                    "mask_label": mask_label,
                 }
             )
         return output_examples
