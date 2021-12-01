@@ -26,13 +26,13 @@ class DataCollatorForBertWithSOP(DataCollatorForWholeWordMask):
         self.pad_to_multiple_of = pad_to_multiple_of
     
     def __call__(self, examples: List[Dict[str, Any]]) -> Dict[str, Any]:
-        examples = self.prepare_sop_from_examples(examples)
+        examples = self.prepare_wwm_and_sop_from_examples(examples)
         batch = self.tokenizer.pad(examples, return_tensors="pt", pad_to_multiple_of=self.pad_to_multiple_of)
         batch_mask = batch.pop("mask_label")
         batch["input_ids"], batch["labels"] = self.torch_mask_tokens(batch["input_ids"], batch_mask)
         return batch
 
-    def prepare_sop_from_examples(self, examples: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+    def prepare_wwm_and_sop_from_examples(self, examples: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
         output_examples = []
         for example in examples:
             chunk_ids = example["input_ids"]
