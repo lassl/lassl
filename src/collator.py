@@ -14,7 +14,7 @@ def tolist(x):
     return x.tolist()
 
 
-class DataCollatorForBert(DataCollatorForWholeWordMask):
+class DataCollatorForBertWithSOP(DataCollatorForWholeWordMask):
     def __init__(
         self,
         tokenizer: PreTrainedTokenizerBase,

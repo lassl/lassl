@@ -15,7 +15,7 @@ from transformers import (
 from transformers.trainer_utils import get_last_checkpoint
 
 from datasets import Dataset
-from src.collator import DataCollatorForBert, DataCollatorForSOP
+from src.collator import DataCollatorForBertWithSOP, DataCollatorForSOP
 
 logger = logging.getLogger(__name__)
 
@@ -45,7 +45,7 @@ def main():
     model.resize_token_embeddings(tokenizer.vocab_size)
 
     if model_args.model_type in ["bert"]:
-        data_collator = DataCollatorForBert(
+        data_collator = DataCollatorForBertWithSOP(
             tokenizer=tokenizer,
             mlm_probability=data_args.mlm_probability,
         )
