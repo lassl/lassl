@@ -41,15 +41,14 @@ def get_main_args():
 def main():
     args = get_main_args()
     nested_args = OmegaConf.load(args.config_path)
-    data_args = nested_args.data
     model_args = nested_args.model
+    data_args = nested_args.data
     collator_args = nested_args.collator
     training_args = TrainingArguments(**nested_args.training)
 
-    data_dir = data_args.pop("data_dir")
-    train_dataset = Dataset.load_from_disk(data_dir)
+    train_dataset = Dataset.load_from_disk(data_args.data_dir)
     eval_dataset = None
-    tokenizer = AutoTokenizer.from_pretrained(data_dir)
+    tokenizer = AutoTokenizer.from_pretrained(data_args.data_dir)
 
     assert (
         model_args.model_type in CONFIG_MAPPING.keys()
