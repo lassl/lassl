@@ -106,8 +106,7 @@ def main():
     trainer.save_model()  # Saves the tokenizer too for easy upload
     metrics = train_result.metrics
 
-    max_train_samples = len(train_dataset)
-    metrics["train_samples"] = min(max_train_samples, len(train_dataset))
+    metrics["train_samples"] = len(train_dataset)
 
     trainer.log_metrics("train", metrics)
     trainer.save_metrics("train", metrics)
