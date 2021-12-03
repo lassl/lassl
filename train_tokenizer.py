@@ -12,7 +12,6 @@ model_type_to_predefined_model = {
     "gpt2": "gpt2",
     "roberta": "roberta-base",
     "albert": "albert-base-v2",
-    "electra": "google/electra-small-discriminator",
 }
 
 
