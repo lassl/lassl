@@ -16,6 +16,8 @@ model:
   vocab_size: 30522
 data:
   data_dir: "datasets/bert"
+  test_size: 0.0 # If you set this argument, arguments must be floating type. (e.g. 0.01)
+collator:
   mlm_probability: 0.15
 training:
   output_dir: "checkpoints/bert"

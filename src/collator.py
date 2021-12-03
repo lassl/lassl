@@ -3,7 +3,6 @@ from typing import Any, Dict, List, Optional
 
 from transformers import DataCollatorForLanguageModeling, DataCollatorForWholeWordMask
 from transformers.tokenization_utils_base import PreTrainedTokenizerBase
-from transformers.data.data_collator import _torch_collate_batch
 
 
 def tolist(x):
@@ -14,7 +13,11 @@ def tolist(x):
     return x.tolist()
 
 
-class DataCollatorForBertWithSOP(DataCollatorForWholeWordMask):
+class DataCollatorForBert(DataCollatorForWholeWordMask):
+    """
+    Processing training examples to mini-batch for Bert (mlm+wwm+sop).
+    """
+
     def __init__(
         self,
         tokenizer: PreTrainedTokenizerBase,
@@ -24,15 +27,15 @@ class DataCollatorForBertWithSOP(DataCollatorForWholeWordMask):
         self.tokenizer = tokenizer
         self.mlm_probability = mlm_probability
         self.pad_to_multiple_of = pad_to_multiple_of
-    
+
     def __call__(self, examples: List[Dict[str, Any]]) -> Dict[str, Any]:
-        examples = self.prepare_wwm_and_sop_from_examples(examples)
+        examples = self._prepare_wwm_and_sop_from_examples(examples)
         batch = self.tokenizer.pad(examples, return_tensors="pt", pad_to_multiple_of=self.pad_to_multiple_of)
         batch_mask = batch.pop("mask_label")
         batch["input_ids"], batch["labels"] = self.torch_mask_tokens(batch["input_ids"], batch_mask)
         return batch
 
-    def prepare_wwm_and_sop_from_examples(self, examples: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+    def _prepare_wwm_and_sop_from_examples(self, examples: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
         output_examples = []
         for example in examples:
             chunk_ids = example["input_ids"]
@@ -65,12 +68,9 @@ class DataCollatorForBertWithSOP(DataCollatorForWholeWordMask):
         return output_examples
 
 
-class DataCollatorForSOP(DataCollatorForLanguageModeling):
+class DataCollatorForAlbert(DataCollatorForLanguageModeling):
     """
-    Data collator used for masked langauge modeling and sentence order prediction task.
-
-    - collates batches of tensors, honoring their tokenizer's pad_token
-    - preprocesses batches for both masked language modeling and sentence order prediction
+    Processing training examples to mini-batch for Albert (mlm+sop).
     """
 
     def __init__(
@@ -84,7 +84,7 @@ class DataCollatorForSOP(DataCollatorForLanguageModeling):
         self.pad_to_multiple_of = pad_to_multiple_of
 
     def __call__(self, examples: List[Dict[str, Any]]) -> Dict[str, Any]:
-        examples = self.prepare_sop_from_examples(examples)
+        examples = self._prepare_sop_from_examples(examples)
         batch = self.tokenizer.pad(examples, return_tensors="pt", pad_to_multiple_of=self.pad_to_multiple_of)
 
         special_tokens_mask = batch.pop("special_tokens_mask", None)
@@ -93,7 +93,7 @@ class DataCollatorForSOP(DataCollatorForLanguageModeling):
         )
         return batch
 
-    def prepare_sop_from_examples(self, examples: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+    def _prepare_sop_from_examples(self, examples: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
         output_examples = []
         for example in examples:
             chunk_ids = example["input_ids"]
@@ -123,3 +123,32 @@ class DataCollatorForSOP(DataCollatorForLanguageModeling):
                 }
             )
         return output_examples
+
+
+class DataCollatorForRoberta(DataCollatorForLanguageModeling):
+    """
+    Processing training examples to mini-batch for Roberta (mlm).
+    """
+
+    def __init__(
+        self,
+        tokenizer: PreTrainedTokenizerBase,
+        mlm_probability: float = 0.15,
+        pad_to_multiple_of: Optional[int] = None,
+    ) -> None:
+        super().__init__(
+            tokenizer=tokenizer, mlm=True, mlm_probability=mlm_probability, pad_to_multiple_of=pad_to_multiple_of
+        )
+
+
+class DataCollatorForGpt2:
+    """
+    Processing training examples to mini-batch for Gpt2 (clm).
+    """
+
+    def __init__(
+        self,
+        tokenizer: PreTrainedTokenizerBase,
+        pad_to_multiple_of: Optional[int] = None,
+    ) -> None:
+        super().__init__(tokenizer=tokenizer, mlm=False, pad_to_multiple_of=pad_to_multiple_of)

@@ -48,7 +48,6 @@ class BertProcessor(BaseProcessor):
         return dict_of_training_examples
 
 
-
 class RobertaProcessor(BaseProcessor):
     def __init__(self, model_name_or_path: str, max_length: int) -> None:
         super().__init__(model_name_or_path=model_name_or_path, max_length=max_length)
