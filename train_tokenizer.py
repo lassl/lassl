@@ -67,13 +67,17 @@ def main():
     data_args, model_args = parser.parse_args_into_dataclasses()
     corpora = load_corpora(data_args.corpora_dir, data_args.corpus_type)
 
+    assert data_args.sampling_ratio > 0, "sampling_ratio must be greater than 0."
+    
     if 0 < data_args.sampling_ratio < 1.0:
         total_size = len(corpora)
         sample_size = int(total_size * data_args.sampling_ratio)
-        sampled_corpora = corpora.select(indices=choice(range(total_size), sample_size))
+        corpora = corpora.select(indices=choice(range(total_size), sample_size))
+    else:
+        print("Since sampling_ratio >= 1.0, all corpora will be used.")
 
     tokenizer = AutoTokenizer.from_pretrained(model_type_to_predefined_model[model_args.model_type])
-    data_iterator = batch_iterator(sampled_corpora, batch_size=data_args.batch_size)
+    data_iterator = batch_iterator(corpora, batch_size=data_args.batch_size)
 
     if model_args.additional_special_tokens:
         assert len(model_args.additional_special_tokens) == len(
