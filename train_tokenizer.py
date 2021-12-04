@@ -7,12 +7,10 @@ from transformers import AutoTokenizer, HfArgumentParser
 from src.utils import batch_iterator, load_corpora
 
 model_type_to_predefined_model = {
-    "bert-uncased": "bert-base-uncased",
     "bert-cased": "bert-base-cased",
     "gpt2": "gpt2",
     "roberta": "roberta-base",
     "albert": "albert-base-v2",
-    "electra": "google/electra-small-discriminator",
 }
 
 
@@ -46,12 +44,10 @@ class ModelArguments:
         default="roberta",
         metadata={
             "choices": [
-                "bert-uncased",
                 "bert-cased",
                 "gpt2",
                 "roberta",
                 "albert",
-                "electra",
             ]
         },
     )

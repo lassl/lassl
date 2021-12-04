@@ -2,20 +2,31 @@ import logging
 import os
 from argparse import ArgumentParser
 
+from datasets import Dataset
 from omegaconf import OmegaConf
 from transformers import (
     CONFIG_MAPPING,
     AutoModelForPreTraining,
     AutoTokenizer,
-    DataCollatorForLanguageModeling,
     Trainer,
     TrainingArguments,
     set_seed,
 )
 from transformers.trainer_utils import get_last_checkpoint
 
-from datasets import Dataset
-from src.collator import DataCollatorForBertWithSOP, DataCollatorForSOP
+from src.collator import (
+    DataCollatorForAlbert,
+    DataCollatorForBert,
+    DataCollatorForGpt2,
+    DataCollatorForRoberta,
+)
+
+model_type_to_collator = {
+    "bert": DataCollatorForBert,
+    "albert": DataCollatorForAlbert,
+    "roberta": DataCollatorForRoberta,
+    "gpt2": DataCollatorForGpt2,
+}
 
 logger = logging.getLogger(__name__)
 
@@ -32,46 +43,40 @@ def main():
     nested_args = OmegaConf.load(args.config_path)
     model_args = nested_args.model
     data_args = nested_args.data
+    collator_args = nested_args.collator
     training_args = TrainingArguments(**nested_args.training)
 
-    dataset = Dataset.load_from_disk(data_args.data_dir)
+    train_dataset = Dataset.load_from_disk(data_args.data_dir)
+    eval_dataset = None
     tokenizer = AutoTokenizer.from_pretrained(data_args.data_dir)
 
     assert (
         model_args.model_type in CONFIG_MAPPING.keys()
     ), f"model_args.model_type must be one of {CONFIG_MAPPING.keys()}"
+
     model_config = CONFIG_MAPPING[model_args.model_type](**model_args)
     model = AutoModelForPreTraining.from_config(model_config)
     model.resize_token_embeddings(tokenizer.vocab_size)
 
-    if model_args.model_type in ["bert"]:
-        data_collator = DataCollatorForBertWithSOP(
-            tokenizer=tokenizer,
-            mlm_probability=data_args.mlm_probability,
-        )
+    data_collator = model_type_to_collator[model_args.model_type](tokenizer=tokenizer, **collator_args)
 
-    elif model_args.model_type in ["roberta"]:
-        data_collator = DataCollatorForLanguageModeling(
-            tokenizer=tokenizer,
-            mlm=True,
-            mlm_probability=data_args.mlm_probability,
+    if training_args.do_eval and data_args.test_size:
+        train_dataset, eval_dataset = (
+            _ for _ in train_dataset.train_test_split(test_size=data_args.test_size).values()
         )
-    elif model_args.model_type in ["gpt2"]:
-        data_collator = DataCollatorForLanguageModeling(
-            tokenizer=tokenizer,
-            mlm=False,
-        )
-    elif model_args.model_type in ["albert"]:
-        data_collator = DataCollatorForSOP(
-            tokenizer=tokenizer,
-            mlm_probability=data_args.mlm_probability,
+        logger.info(
+            f"eval_dataset is set to {len(eval_dataset)} samples. pre-training is run by consuming training dataset whose number of samples are {len(train_dataset)}."
         )
     else:
-        raise NotImplementedError
+        logger.info(
+            f"eval_dataset is not set. pre-training is run by consuming training dataset whose number of samples are {len(train_dataset)}."
+        )
+
     trainer = Trainer(
-        model=model,
         args=training_args,
-        train_dataset=dataset,
+        train_dataset=train_dataset,
+        eval_dataset=eval_dataset,
+        model=model,
         tokenizer=tokenizer,
         data_collator=data_collator,
     )
@@ -101,8 +106,7 @@ def main():
     trainer.save_model()  # Saves the tokenizer too for easy upload
     metrics = train_result.metrics
 
-    max_train_samples = len(dataset)
-    metrics["train_samples"] = min(max_train_samples, len(dataset))
+    metrics["train_samples"] = len(train_dataset)
 
     trainer.log_metrics("train", metrics)
     trainer.save_metrics("train", metrics)
