@@ -1,0 +1,5 @@
+datasets==1.15.1
+numpy==1.21.1
+omegaconf==2.1.1
+pyarrow==6.0.1
+transformers==4.12.5
