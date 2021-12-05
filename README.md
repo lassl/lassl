@@ -33,7 +33,7 @@ LASSL은 데이터만 있다면 누구나 쉽게 자신만의 사전학습 언�
 
 ### 1. Train Tokenizer
 ```bash
-$ peotry run python3 train_tokenizer.py --corpora_dir $CORPORA_DIR --model_type $MODEL_TYPE --vocab_size $VOCAB_SIZE
+$ poetry run python3 train_tokenizer.py --corpora_dir $CORPORA_DIR --model_type $MODEL_TYPE --vocab_size $VOCAB_SIZE
 ```
 
 ### 2. Serialize Corpora
