@@ -38,7 +38,7 @@ $ poetry run python3 train_tokenizer.py --corpora_dir $CORPORA_DIR --model_type 
 
 ### 2. Serialize Corpora
 ```bash
-$ peotry run python3 serialize_corpora.py --corpora_dir $CORPORA_DIR --tokenizer_dir $TOKENIZER_DIR --model_type --max_length $MAX_LENGTH
+$ poetry run python3 serialize_corpora.py --corpora_dir $CORPORA_DIR --tokenizer_dir $TOKENIZER_DIR --model_type --max_length $MAX_LENGTH
 ```
 
 ### 3. Pretrain Language Model
