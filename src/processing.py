@@ -70,7 +70,7 @@ class RobertaProcessor(BaseProcessor):
             input_ids += [self._tokenizer.eos_token_id]
             self._buffer.extend(input_ids)
 
-            while len(self._buffer) >= (self._chunk_size):
+            while len(self._buffer) >= self._chunk_size:
                 chunk_ids = self._buffer[: self._chunk_size]
                 training_example = self._tokenizer.prepare_for_model(
                     chunk_ids,
