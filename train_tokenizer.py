@@ -68,7 +68,7 @@ def main():
     corpora = load_corpora(data_args.corpora_dir, data_args.corpus_type)
 
     assert data_args.sampling_ratio > 0, "sampling_ratio must be greater than 0."
-    
+
     if 0 < data_args.sampling_ratio < 1.0:
         total_size = len(corpora)
         sample_size = int(total_size * data_args.sampling_ratio)

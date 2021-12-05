@@ -2,7 +2,6 @@ import logging
 import os
 from argparse import ArgumentParser
 
-from datasets import Dataset
 from omegaconf import OmegaConf
 from transformers import (
     CONFIG_MAPPING,
@@ -14,6 +13,7 @@ from transformers import (
 )
 from transformers.trainer_utils import get_last_checkpoint
 
+from datasets import Dataset
 from src.collator import (
     DataCollatorForAlbert,
     DataCollatorForBert,

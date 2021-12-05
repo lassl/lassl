@@ -81,6 +81,7 @@ def main():
         load_from_cache_file=args.load_from_cache_file,
         remove_columns=corpora.column_names,
     )
+
     dataset.save_to_disk("datasets/" + args.model_type)
     processor.save_tokenizer("datasets/" + args.model_type)
 
