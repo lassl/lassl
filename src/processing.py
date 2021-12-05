@@ -158,7 +158,7 @@ class AlbertProcessor(BaseProcessor):
             input_ids += [self._tokenizer.eos_token_id]
             self._buffer.extend(input_ids)
 
-            while len(self._buffer) >= (self._chunk_size):
+            while len(self._buffer) >= self._chunk_size:
                 chunk_ids = self._buffer[: self._chunk_size]
                 dict_of_training_examples["input_ids"].append(chunk_ids)
                 self._buffer = self._buffer[self._chunk_size :]
