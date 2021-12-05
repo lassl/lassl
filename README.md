@@ -43,7 +43,7 @@ $ peotry run python3 serialize_corpora.py --corpora_dir $CORPORA_DIR --tokenizer
 
 ### 3. Pretrain Language Model
 ```bash
-$ peotry run python3 pretrain_language_model.py --config_path $CONFIG_PATH
+$ poetry run python3 pretrain_language_model.py --config_path $CONFIG_PATH
 ```
 
 ## Contributors
