@@ -63,6 +63,9 @@ class Arguments:
     load_from_cache_file: bool = field(
         default=True,
     )
+    keep_in_memory: bool = field(
+        default=False,
+    )
 
 
 def main():
@@ -79,6 +82,7 @@ def main():
         batch_size=args.batch_size,
         writer_batch_size=args.writer_batch_size,
         load_from_cache_file=args.load_from_cache_file,
+        keep_in_memory=args.keep_in_memory,
         remove_columns=corpora.column_names,
     )
 
