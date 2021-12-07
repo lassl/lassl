@@ -72,7 +72,7 @@ def main():
     if 0 < data_args.sampling_ratio < 1.0:
         total_size = len(corpora)
         sample_size = int(total_size * data_args.sampling_ratio)
-        corpora = corpora.select(indices=choice(range(total_size), sample_size))
+        corpora = corpora.select(indices=choice(total_size, sample_size, replace=False))
     else:
         print("Since sampling_ratio >= 1.0, all corpora will be used.")
 
