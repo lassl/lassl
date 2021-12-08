@@ -56,7 +56,12 @@ $ python3 train_tokenizer.py --corpora_dir $CORPORA_DIR \
 
 ```bash
 # poetry 이용
-$ poetry run python3 train_tokenizer.py --corpora_dir $CORPORA_DIR --corpus_type $CORPUS_TYPE --sampling_ratio $SAMPLING_RATIO --model_type $MODEL_TYPE --vocab_size $VOCAB_SIZE --min_frequency $MIN_FREQUENCY
+$ poetry run python3 train_tokenizer.py --corpora_dir $CORPORA_DIR \
+--corpus_type $CORPUS_TYPE \
+--sampling_ratio $SAMPLING_RATIO \
+--model_type $MODEL_TYPE \
+--vocab_size $VOCAB_SIZE \
+--min_frequency $MIN_FREQUENCY
 ```
 
 ### 2. Serialize Corpora
