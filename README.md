@@ -46,7 +46,12 @@ $ poetry install
 
 ### 1. Train Tokenizer
 ```bash
-$ python3 train_tokenizer.py --corpora_dir $CORPORA_DIR --corpus_type $CORPUS_TYPE --sampling_ratio $SAMPLING_RATIO --model_type $MODEL_TYPE --vocab_size $VOCAB_SIZE --min_frequency $MIN_FREQUENCY
+$ python3 train_tokenizer.py --corpora_dir $CORPORA_DIR \
+--corpus_type $CORPUS_TYPE \
+--sampling_ratio $SAMPLING_RATIO \
+--model_type $MODEL_TYPE \
+--vocab_size $VOCAB_SIZE \
+--min_frequency $MIN_FREQUENCY
 ```
 
 ```bash
