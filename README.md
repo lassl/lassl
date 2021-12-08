@@ -27,7 +27,7 @@
 ## What is LASSL
 LASSL은 데이터만 있다면 누구나 쉽게 자신만의 사전학습 언어모델을 학습할 수 있도록 Huggingface의 Transformers, Datasets 라이브러리를 이용해 언어 모델 사전학습을 제공합니다.
 
-## environment setting
+## Environment setting
 아래 명령어를 통해 필요한 패키지를 설치하거나,
 ```bash
 pip3 install -r requirements.txt
