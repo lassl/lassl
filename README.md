@@ -71,7 +71,12 @@ $ python3 serialize_corpora.py --model_type $MODEL_TYPE \
 
 ```bash
 # poetry 이용
-$ poetry run python3 serialize_corpora.py --model_type $MODEL_TYPE --tokenizer_dir $TOKENIZER_DIR --corpora_dir $CORPORA_DIR --corpus_type $CORPUS_TYPE --max_length $MAX_LENGTH --num_proc $NUM_PROC
+$ poetry run python3 serialize_corpora.py --model_type $MODEL_TYPE \
+--tokenizer_dir $TOKENIZER_DIR \
+--corpora_dir $CORPORA_DIR \
+--corpus_type $CORPUS_TYPE \
+--max_length $MAX_LENGTH \
+--num_proc $NUM_PROC
 ```
 
 ### 3. Pretrain Language Model
