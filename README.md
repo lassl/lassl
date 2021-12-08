@@ -61,7 +61,12 @@ $ poetry run python3 train_tokenizer.py --corpora_dir $CORPORA_DIR --corpus_type
 
 ### 2. Serialize Corpora
 ```bash
-$ python3 serialize_corpora.py --model_type $MODEL_TYPE --tokenizer_dir $TOKENIZER_DIR --corpora_dir $CORPORA_DIR --corpus_type $CORPUS_TYPE --max_length $MAX_LENGTH --num_proc $NUM_PROC
+$ python3 serialize_corpora.py --model_type $MODEL_TYPE \
+--tokenizer_dir $TOKENIZER_DIR \
+--corpora_dir $CORPORA_DIR \
+--corpus_type $CORPUS_TYPE \
+--max_length $MAX_LENGTH \
+--num_proc $NUM_PROC
 ```
 
 ```bash
