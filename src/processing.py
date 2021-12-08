@@ -40,7 +40,7 @@ class BertProcessor(BaseProcessor):
             input_ids += [self._tokenizer.sep_token_id]
             self._buffer.extend(input_ids)
 
-            if len(self._buffer) >= (self._chunk_size):
+            while len(self._buffer) >= self._chunk_size:
                 chunk_ids = self._buffer[: self._chunk_size]
                 dict_of_training_examples["input_ids"].append(chunk_ids)
                 self._buffer = self._buffer[self._chunk_size :]
@@ -70,7 +70,7 @@ class RobertaProcessor(BaseProcessor):
             input_ids += [self._tokenizer.eos_token_id]
             self._buffer.extend(input_ids)
 
-            if len(self._buffer) >= (self._chunk_size):
+            while len(self._buffer) >= self._chunk_size:
                 chunk_ids = self._buffer[: self._chunk_size]
                 training_example = self._tokenizer.prepare_for_model(
                     chunk_ids,
@@ -116,7 +116,7 @@ class GPT2Processor(BaseProcessor):
             input_ids += [self._tokenizer.eos_token_id]
             self._buffer.extend(input_ids)
 
-            if len(self._buffer) >= (self._chunk_size):
+            while len(self._buffer) >= self._chunk_size:
                 chunk_ids = self._buffer[: self._chunk_size]
                 training_example = self._tokenizer.prepare_for_model(
                     chunk_ids,
@@ -158,7 +158,7 @@ class AlbertProcessor(BaseProcessor):
             input_ids += [self._tokenizer.eos_token_id]
             self._buffer.extend(input_ids)
 
-            if len(self._buffer) >= (self._chunk_size):
+            while len(self._buffer) >= self._chunk_size:
                 chunk_ids = self._buffer[: self._chunk_size]
                 dict_of_training_examples["input_ids"].append(chunk_ids)
                 self._buffer = self._buffer[self._chunk_size :]

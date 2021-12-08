@@ -21,7 +21,7 @@ collator:
   mlm_probability: 0.15
 training:
   output_dir: "checkpoints/bert"
-  overwrite_output_dir: True
+  overwrite_output_dir: False # If you use multi-node, set this True.
   do_train: True
   do_eval: False
   per_device_train_batch_size: 8
