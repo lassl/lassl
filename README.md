@@ -36,9 +36,9 @@ pip3 install -r requirements.txt
 poetry를 이용하여 환경설정을 할 수 있습니다.
 ```bash
 # poetry 설치
-$ curl -sSL https://raw.githubusercontent.com/python-poetry/poetry/master/get-poetry.py | python -
+curl -sSL https://raw.githubusercontent.com/python-poetry/poetry/master/get-poetry.py | python -
 # poetry dependencies 환경 설정
-$ poetry install
+poetry install
 ```
 
 ## How to Use
@@ -46,7 +46,7 @@ $ poetry install
 
 ### 1. Train Tokenizer
 ```bash
-$ python3 train_tokenizer.py \
+python3 train_tokenizer.py \
     --corpora_dir $CORPORA_DIR \
     --corpus_type $CORPUS_TYPE \
     --sampling_ratio $SAMPLING_RATIO \
@@ -57,7 +57,7 @@ $ python3 train_tokenizer.py \
 
 ```bash
 # poetry 이용
-$ poetry run python3 train_tokenizer.py \
+poetry run python3 train_tokenizer.py \
     --corpora_dir $CORPORA_DIR \
     --corpus_type $CORPUS_TYPE \
     --sampling_ratio $SAMPLING_RATIO \
@@ -68,7 +68,7 @@ $ poetry run python3 train_tokenizer.py \
 
 ### 2. Serialize Corpora
 ```bash
-$ python3 serialize_corpora.py \
+python3 serialize_corpora.py \
     --model_type $MODEL_TYPE \
     --tokenizer_dir $TOKENIZER_DIR \
     --corpora_dir $CORPORA_DIR \
@@ -79,7 +79,7 @@ $ python3 serialize_corpora.py \
 
 ```bash
 # poetry 이용
-$ poetry run python3 serialize_corpora.py \
+poetry run python3 serialize_corpora.py \
     --model_type $MODEL_TYPE \
     --tokenizer_dir $TOKENIZER_DIR \
     --corpora_dir $CORPORA_DIR \
@@ -90,17 +90,17 @@ $ poetry run python3 serialize_corpora.py \
 
 ### 3. Pretrain Language Model
 ```bash
-$ python3 pretrain_language_model.py --config_path $CONFIG_PATH
+python3 pretrain_language_model.py --config_path $CONFIG_PATH
 ```
 
 ```bash
 # poetry 이용
-$ poetry run python3 pretrain_language_model.py --config_path $CONFIG_PATH
+poetry run python3 pretrain_language_model.py --config_path $CONFIG_PATH
 ```
 
 ```bash
 # TPU를 사용할 때는 아래 명령어를 사용합니다. (poetry 환경은 PyTorch XLA를 기본으로 제공하지 않습니다.)
-$ python3 xla_spawn.py --num_cores $NUM_CORES pretrain_language_model.py --config_path $CONFIG_PATH
+python3 xla_spawn.py --num_cores $NUM_CORES pretrain_language_model.py --config_path $CONFIG_PATH
 ```
 
 ## Contributors
