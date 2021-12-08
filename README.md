@@ -15,7 +15,7 @@
 
 <p align="center">
     <a href="https://github.com/lassl/lassl/blob/master/LICENSE">
-        <img alt="License" src="https://https://img.shields.io/badge/license-MIT-blue.svg">
+        <img alt="License" src="https://img.shields.io/badge/license-MIT-blue.svg">
     </a>
     <a href="https://github.com/lassl/lassl/issues">
         <img alt="Issues" src="https://img.shields.io/github/issues/lassl/lassl">
