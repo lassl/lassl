@@ -40,7 +40,7 @@ poetry install
 
 ## How to Use
 - 언어 모델 사전학습은 크게 **1. 토크나이저 학습**, **2. 코퍼스 시리얼라이즈**, **3. 언어 모델 사전학습**의 세 단계로 나눌 수 있습니다. 
-- **데이터셋을 지원하는 형식**에 맞춰 준비한 뒤 순서에 따라 진행하면 자신만의 사전학습 모델을 만들 수 있습니다. <a href="https://github.com/lassl/lassl/blob/feature/%2324/docs/supported_dataset.md">지원하는 코퍼스 형태(corpus_type)는 여기서 확인할 수 있습니다.</a>
+- **데이터셋을 지원하는 형식**에 맞춰 준비한 뒤 순서에 따라 진행하면 자신만의 사전학습 모델을 만들 수 있습니다. <a href="https://github.com/lassl/lassl/blob/main/docs/supported_dataset.md">지원하는 코퍼스 형태(corpus_type)는 여기서 확인할 수 있습니다.</a>
 
 ### 1. Train Tokenizer
 ```bash
