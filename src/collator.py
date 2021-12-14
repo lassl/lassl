@@ -141,7 +141,7 @@ class DataCollatorForRoberta(DataCollatorForLanguageModeling):
         )
 
 
-class DataCollatorForGpt2:
+class DataCollatorForGpt2(DataCollatorForLanguageModeling):
     """
     Processing training examples to mini-batch for Gpt2 (clm).
     """
