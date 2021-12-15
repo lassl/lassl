@@ -16,12 +16,15 @@
     <a href="https://github.com/lassl/lassl/issues">
         <img alt="Issues" src="https://img.shields.io/github/issues/lassl/lassl">
     </a>
+    <a href="https://huggingface.co/lassl">
+        <img alt="Issues" src="https://img.shields.io/badge/huggingface-lassl-002060">
+    </a>
 </p>
 
 </div>
 
 ## What is LASSL
-LASSL은 **LA**nguage **S**emi-**S**upervised **L**earning의 약자로, 데이터만 있다면 누구나 쉽게 자신만의 언어모델을 가질 수 있도록 Huggingface의 Transformers, Datasets 라이브러리를 이용해 **언어 모델 사전학습**을 제공합니다.
+LASSL은 **LA**nguage **S**emi-**S**upervised **L**earning의 약자로, 데이터만 있다면 누구나 쉽게 자신만의 언어모델을 가질 수 있도록 Huggingface의 Transformers, Datasets 라이브러리를 이용해 **언어 모델 사전학습**을 제공합니다. 🤗 [Huggingface hub](https://huggingface.co/lassl)에서 lassl로 학습된 모델을 확인할 수 있습니다.
 
 ## Environment setting
 아래 명령어를 통해 필요한 패키지를 설치하거나,
