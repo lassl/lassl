@@ -21,6 +21,9 @@
     <a href="https://github.com/lassl/lassl/issues">
         <img alt="Issues" src="https://img.shields.io/github/issues/lassl/lassl">
     </a>
+    <a href="https://huggingface.co/lassl">
+        <img alt="Issues" src="https://img.shields.io/badge/huggingface-lassl-002060">
+    </a>
 </p>
 
 </div>
