@@ -2,7 +2,7 @@ from dataclasses import dataclass, field
 
 from transformers import HfArgumentParser
 
-from src.processor import (
+from src.processors import (
     AlbertProcessor,
     BertProcessor,
     GPT2Processor,
