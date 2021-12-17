@@ -1,7 +1,8 @@
-model: # Ref: https://huggingface.co/docs/transformers/master/en/model_doc/auto#transformers.AutoModelForPreTraining
+model: # Edit model parameters referring to the follow link: https://huggingface.co/docs/transformers/master/en/model_doc/auto#transformers.AutoModelForPreTraining
   attention_probs_dropout_prob: 0.1
   bos_token_id: 0
   eos_token_id: 2
+  pad_token_id: 1
   hidden_act: "gelu"
   hidden_dropout_prob: 0.1
   hidden_size: 256
@@ -12,7 +13,6 @@ model: # Ref: https://huggingface.co/docs/transformers/master/en/model_doc/auto#
   model_type: "roberta" # Choose a model type in pretrain_language_model.py.
   num_attention_heads: 4
   num_hidden_layers: 12
-  pad_token_id: 1
   type_vocab_size: 1
   vocab_size: 51200
 data:
@@ -20,7 +20,7 @@ data:
   test_size: 0.0 # If you set this argument, arguments must be floating type. (e.g. 0.01)
 collator:
   mlm_probability: 0.15
-training: # Ref: https://huggingface.co/docs/transformers/master/en/main_classes/trainer#transformers.TrainingArguments
+training: # Edit training parameters referring to the follow link: https://huggingface.co/docs/transformers/master/en/main_classes/trainer#transformers.TrainingArguments
   output_dir: "checkpoints/roberta" # Fill in the path which is used to save checkpoints.
   overwrite_output_dir: True # If you use multi-node, set this True.
   do_train: True
