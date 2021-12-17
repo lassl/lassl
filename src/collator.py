@@ -1,7 +1,10 @@
 import random
 from typing import Any, Dict, List, Optional
 
+import torch
+
 from transformers import DataCollatorForLanguageModeling, DataCollatorForWholeWordMask
+from transformers.data.data_collator import _torch_collator_batch
 from transformers.tokenization_utils_base import PreTrainedTokenizerBase
 
 
@@ -141,7 +144,7 @@ class DataCollatorForRoberta(DataCollatorForLanguageModeling):
         )
 
 
-class DataCollatorForGpt2(DataCollatorForLanguageModeling):
+class DataCollatorForGpt2:
     """
     Processing training examples to mini-batch for Gpt2 (clm).
     """
@@ -150,5 +153,12 @@ class DataCollatorForGpt2(DataCollatorForLanguageModeling):
         self,
         tokenizer: PreTrainedTokenizerBase,
         pad_to_multiple_of: Optional[int] = None,
-    ) -> None:
-        super().__init__(tokenizer=tokenizer, mlm=False, pad_to_multiple_of=pad_to_multiple_of)
+    ):
+        self.tokenizer = tokenizer
+        self.pad_to_multiple_of = pad_to_multiple_of
+
+    def __call__(self, examples):
+        examples = [e["input_ids"] for e in examples]
+        batch = {"input_ids": _torch_collator_batch(examples, tokenizer=self.tokenizer, pad_to_multiple_of=self.pad_to_multiple_of)}
+        batch["labels"] = batch["input_ids"].clone()
+        return batch
