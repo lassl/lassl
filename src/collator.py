@@ -1,8 +1,6 @@
 import random
 from typing import Any, Dict, List, Optional
 
-import torch
-
 from transformers import DataCollatorForLanguageModeling, DataCollatorForWholeWordMask
 from transformers.data.data_collator import _torch_collator_batch
 from transformers.tokenization_utils_base import PreTrainedTokenizerBase
