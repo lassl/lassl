@@ -26,7 +26,7 @@
 </div>
 
 ## What is LASSL
-LASSL is a **LA**nguage library for **S**elf-**S**upervised **L**earning. LASSL aims to provide a easy-to-use framework for pretraining language model by only using Huggingface's [Transformers](https://github.com/huggingface/transformers) and [Datasets](https://github.com/huggingface/datasets).
+LASSL is a **LA**nguage library for **S**elf-**S**upervised **L**earning. LASSL aims to provide a easy-to-use framework for pretraining language model by only using Huggingface's Transformers and Datasets.
 
 ## Environment setting
 You can install the required packages following:
