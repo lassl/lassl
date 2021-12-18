@@ -124,7 +124,7 @@ class GPT2Processor(BaseProcessor):
                     truncation=False,
                     return_attention_mask=False,
                     return_token_type_ids=False,
-                    add_special_tokens=True,
+                    add_special_tokens=False,
                 )
 
                 for key in training_example.keys():

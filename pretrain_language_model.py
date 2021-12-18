@@ -14,7 +14,7 @@ from transformers import (
 )
 from transformers.trainer_utils import get_last_checkpoint
 
-from src.collator import (
+from src.collators import (
     DataCollatorForAlbert,
     DataCollatorForBert,
     DataCollatorForGpt2,
