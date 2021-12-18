@@ -3,11 +3,11 @@ name = "lassl"
 version = "0.1.0"
 description = "Easy framework for pre-training language models"
 authors = ["seopbo <bsk0130@gmail.com>", "bzantium <ryumin93@gmail.com>", "iron-ij <yij1126@gmail.com>", "monologg <adieujw@gmail.com>"]
-license = "MIT"
+license = "Apache-2.0"
 
 [tool.poetry.dependencies]
 python = "^3.8"
-transformers = "^4.12.5"
+transformers = "^4.13.0"
 datasets = "^1.16.1"
 tokenizers = "^0.10.3"
 black = "^21.11b1"
