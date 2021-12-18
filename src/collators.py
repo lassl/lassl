@@ -158,7 +158,7 @@ class DataCollatorForGpt2:
         self.pad_to_multiple_of = pad_to_multiple_of
 
     def __call__(self, examples):
-        examples = [e["input_ids"] for e in examples]
+        examples = [example["input_ids"] for example in examples]
         batch = {"input_ids": _torch_collator_batch(examples, tokenizer=self.tokenizer, pad_to_multiple_of=self.pad_to_multiple_of)}
         batch["labels"] = batch["input_ids"].clone()
         return batch
