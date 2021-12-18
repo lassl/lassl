@@ -1,58 +1,58 @@
-## 지원하는 코퍼스 형태
+## Supported Corpus Type
 
-현재 LASSL에서는 3가지 타입의 코퍼스 (corpus_type: docu_json, docu_text, sent_text)를 지원합니다. 각 코퍼스 타입의 예시는 다음을 확인 해주세요.
+We support three types of corpus (corpus_type: docu_json, docu_text, sent_text) currently.
 
 ## 1. docu_json
 
-문서 단위로 구성된 json 파일 형태이며 각각의 json object가 1개의 문서로 구성되어 있어야 합니다. 예시는 아래와 같습니다.
+It is in the form of a json file composed of document units, and each json object must be composed of one document.
 
 ```bash
 # sample
-{"text":"문장1 문장2 문장3..."}
-{"text":"문장4 문장5 문장6..."}
-{"text":"문장7 문장8 문장9..."}
+{"text":"sent1 sent2 sent3..."}
+{"text":"sent4 sent5 sent6..."}
+{"text":"sent7 sent8 sent9..."}
 ...
 
 # example
-{"text":"지구과학(地球科學, )은 행성인 지구를 대상으로 연구하는 학문들을 묶어 부르는 이름이다. 지구의 환경은 크게 육지, 바다, 대기로 나누어지며, 이러한 환경들은 각각 지구과학의 주요분야라고 할 수 있는 지질과학, 수문과학, 대기과학 분야의 주요연구대상이 된다. 일반적으로 지구과학으로 불리는 학문들은 대기에서 일어나는 현상을 대상으로 하는 기상학, 지구 표면의 물질을 주로 대상으로 하는 지질학, 바다 현상을 대상으로 하는 해양학, 지구의 깊은 속에서 일어나는 현상을 대상으로 하는 지구물리학 등이 있다."}
+{"text":"Earth science is a name that combines the studies of the planet Earth. The Earth's environment is largely divided into land, sea, and atmosphere, and each of these environments is the subject of major research in geological, hydrological, and atmospheric science, which can be said to be the main fields of earth science. Studies commonly called geoscience include meteorology targeting phenomena occurring in the atmosphere, geology mainly targeting substances on Earth's surface, oceanography targeting ocean phenomena, and geophysics targeting phenomena occurring deep inside the Earth."}
 ```
 
 ## 2. docu_text
 
-문서 단위로 구성된 txt 파일 형태이며 각 문서는 한 개의 new line ('\n')으로 구분되어 있어야 합니다. 예시는 아래와 같습니다.
+It is in the form of a text file composed of document units, and each document must be divided into one new line ('\n').
 
 ```bash
 # sample
-문장1 문장2 문장3 ...
-문장4 문장5 문장6 ...
-문장7 문장8 문장9 ...
+sent1 sent2 sent3 ...
+sent4 sent5 sent6 ...
+sent7 sent8 sent9 ...
 
 # example
-지구과학(地球科學, )은 행성인 지구를 대상으로 연구하는 학문들을 묶어 부르는 ...
-푸앵카레 추측은 4차원 초구의 경계인 3차원 구면의 위상학적 특징에 관한 정리이다. 이...
-유클리드 기하학은 고대 그리스의 수학자 에우클레이데스(유클리드)가 구축한 수학 체계로 ...
+Earth science is a combination of studies that ...
+The Poincare conjecture is a summary of the topological features of a three-dimensional sphere that is the boundary ...
+Euclidean geometry is a mathematical system built by the ancient Greek mathematician Euclades (Euclid) ...
 ```
 
 ## 3. sent_text
 
-문장 단위로 구성된 txt 파일 형태이며 각 문장은 한 개의 new line ('\n')으로 구분되고 각 문서는 두 개의 new line 으로 구분되어 있어야 합니다. 예시는 아래와 같습니다.
+It is in the form of a txt file composed of sentence units, and each sentence must be divided into one new line ('\n') and each document must be divided into two new lines.
 
 ```bash
 # sample
-문장1 
-문장2 
-문장3
+sent1 
+sent2 
+sent3
 
-문장4
-문장5
-문장6
+sent4
+sent5
+sent6
 
 # example
-초월수(超越數)는 수학에서 대수학적이지 않은 수를 의미한다.
-어떤 다항 방정식의 해도 될 수 없는 복소수이자 유리수인 계수를 가진 유한한 0이 아닌 근을 의미한다.
-가장 잘 알려진 초월수는 (원주율)과 (자연로그의 밑)이다.
+Transcendental numbers refer to numbers that are not algebraic in mathematics.
+It means a non-zero root with a complex and rational coefficient that no polynomial equation can do.
+The most well-known transcendental numbers are (the rate of origin) and (below the natural logarithm).
 
-맥스웰 방정식은 빛 역시 전자기파의 하나임을 보여준다.
-각각의 방정식은 가우스 법칙, 가우스 자기 법칙, 패러데이 전자기 유도 법칙, 앙페르 회로 법칙으로 불린다.
-각각의 방정식을 제임스 클러크 맥스웰이 종합한 이후 맥스웰 방정식으로 불리게 되었다.
+The Maxwell equation shows that light is also one of the electromagnetic waves.
+Each equation is called the Gaussian Law, the Gaussian Law of Magnetism, the Faraday Law of Electromagnetic Induction, and the Angper Circuit Law.
+After James Clark Maxwell put each equation together, it was called the Maxwell equation.
 ```
