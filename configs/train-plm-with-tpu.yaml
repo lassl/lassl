@@ -20,7 +20,7 @@ data:
   test_size: 0.0 # If you set this argument, arguments must be floating type. (e.g. 0.01)
 collator:
   mlm_probability: 0.15
-training: # Edit training parameters refering to the follow link: https://huggingface.co/docs/transformers/master/en/main_classes/trainer#transformers.TrainingArguments
+training: # Edit training config referring to the follow link: https://huggingface.co/docs/transformers/master/en/main_classes/trainer#transformers.TrainingArguments
   output_dir: "checkpoints/roberta" # Fill in the path which is used to save checkpoints.
   overwrite_output_dir: True # If you use multi-node, set this True.
   do_train: True
