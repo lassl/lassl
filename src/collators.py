@@ -2,7 +2,7 @@ import random
 from typing import Any, Dict, List, Optional
 
 from transformers import DataCollatorForLanguageModeling, DataCollatorForWholeWordMask
-from transformers.data.data_collator import _torch_collator_batch
+from transformers.data.data_collator import _torch_collate_batch
 from transformers.tokenization_utils_base import PreTrainedTokenizerBase
 
 
@@ -157,6 +157,10 @@ class DataCollatorForGpt2:
 
     def __call__(self, examples):
         examples = [example["input_ids"] for example in examples]
-        batch = {"input_ids": _torch_collator_batch(examples, tokenizer=self.tokenizer, pad_to_multiple_of=self.pad_to_multiple_of)}
+        batch = {
+            "input_ids": _torch_collate_batch(
+                examples, tokenizer=self.tokenizer, pad_to_multiple_of=self.pad_to_multiple_of
+            )
+        }
         batch["labels"] = batch["input_ids"].clone()
         return batch
