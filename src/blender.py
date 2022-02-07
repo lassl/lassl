@@ -14,7 +14,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from typing import List, Optional
+from typing import List, Optional, Union
 
 import numpy as np
 from torch.utils.data import Dataset as TorchDataset
@@ -54,7 +54,11 @@ class DatasetBlender(TorchDataset):
         >>> for sample in dataloader_wo_weights: ...
     """
 
-    def __init__(self, datasets: List[Dataset, TorchDataset], weights: Optional[List[float]] = None):
+    def __init__(
+        self,
+        datasets: Union[List[Dataset], List[TorchDataset]],
+        weights: Optional[List[float]] = None,
+    ):
         super(DatasetBlender, self).__init__()
 
         self.datasets = datasets
