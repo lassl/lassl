@@ -104,7 +104,7 @@ class Binder(object):
             sources=[os.path.join(self.base_path, path) for path in self.sources()],
             extra_include_paths=self.includes(),
             extra_cflags=self.cxx_args(),
-            extra_cuda_cflags=self.nvcc_args(),
+            extra_cuda_cflags=self.nvcc_args() if self.compat != 0 else None,
             verbose=False,
         )
 
