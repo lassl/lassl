@@ -17,13 +17,14 @@
 from typing import List, Optional
 
 import numpy as np
-from torch.utils.data import Dataset
+from torch.utils.data import Dataset as TorchDataset
+from datasets import Dataset
 from tqdm import tqdm
 
 from src.cpp_binder import get_datasets_utils
 
 
-class DatasetBlender(Dataset):
+class DatasetBlender(TorchDataset):
     """
     Dataset blender for multiple datasets
     this was copied from Megatron-LM and modified.
@@ -36,7 +37,7 @@ class DatasetBlender(Dataset):
     Usage:
         >>> from torch.utils.data import DataLoader
 
-        >>> # Define list of torch datasets and weights
+        >>> # Define list of the Datasets or PyTorch datasets and weights
         >>> datasets = [dataset_1, dataset_2, dataset_3]
         >>> weights = [0.8, 0.1, 0.1]
 
@@ -53,7 +54,7 @@ class DatasetBlender(Dataset):
         >>> for sample in dataloader_wo_weights: ...
     """
 
-    def __init__(self, datasets: List[Dataset], weights: Optional[List[float]] = None):
+    def __init__(self, datasets: List[Dataset, TorchDataset], weights: Optional[List[float]] = None):
         super(DatasetBlender, self).__init__()
 
         self.datasets = datasets
@@ -78,7 +79,7 @@ class DatasetBlender(Dataset):
         self.dataset_sample_index = np.zeros(self.size, dtype=np.int64)
         cpp_utils = get_datasets_utils()
 
-        if cpp_utils is not None:
+        if cpp_utils is None:
             build_blending_indices = self._build_blending_indices
         else:
             build_blending_indices = cpp_utils.build_blending_indices
