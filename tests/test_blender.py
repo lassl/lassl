@@ -7,12 +7,11 @@ python -m tests.test_blender
 import unittest
 from datasets import load_dataset
 from src.blender import DatasetBlender
+from collections import Counter
 
 
 class BlenderTest(unittest.TestCase):
     def test_blending(self):
-        from collections import Counter
-
         try:
             from langid import classify
         except ImportError as _:
