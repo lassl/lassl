@@ -13,12 +13,12 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-
+import unittest
 from typing import List, Optional, Union
 
 import numpy as np
 from torch.utils.data import Dataset as TorchDataset
-from datasets import Dataset
+from datasets import Dataset, load_dataset
 from tqdm import tqdm
 
 from src.cpp_binder import get_datasets_utils
@@ -103,7 +103,7 @@ class DatasetBlender(TorchDataset):
         dataset_idx = self.dataset_index[idx]
         dataset_len = max(len(self.datasets[dataset_idx]), 1)
         sample_idx = self.dataset_sample_index[idx]
-        return self.datasets[dataset_idx][sample_idx % dataset_len]
+        return self.datasets[dataset_idx][int(sample_idx % dataset_len)]
 
     @staticmethod
     def _build_blending_indices(
