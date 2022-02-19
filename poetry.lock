@@ -203,7 +203,7 @@ python-versions = ">=3.6"
 
 [[package]]
 name = "fsspec"
-version = "2021.11.1"
+version = "2022.1.0"
 description = "File-system specification"
 category = "main"
 optional = false
@@ -317,6 +317,17 @@ optional = false
 python-versions = "*"
 
 [[package]]
+name = "ninja"
+version = "1.10.2.3"
+description = "Ninja is a small build system with a focus on speed"
+category = "main"
+optional = false
+python-versions = "*"
+
+[package.extras]
+test = ["codecov (>=2.0.5)", "coverage (>=4.2)", "flake8 (>=3.0.4)", "pytest (>=4.5.0)", "pytest-cov (>=2.7.1)", "pytest-runner (>=5.1)", "pytest-virtualenv (>=1.7.0)", "virtualenv (>=15.0.3)"]
+
+[[package]]
 name = "numpy"
 version = "1.21.1"
 description = "NumPy is the fundamental package for array computing with Python."
@@ -410,6 +421,17 @@ python-versions = ">=3.6"
 
 [package.dependencies]
 numpy = ">=1.16.6"
+
+[[package]]
+name = "pybind11"
+version = "2.9.1"
+description = "Seamless operability between C++11 and Python"
+category = "main"
+optional = false
+python-versions = "!=3.0.*,!=3.1.*,!=3.2.*,!=3.3.*,!=3.4.*,>=2.7"
+
+[package.extras]
+global = ["pybind11-global (==2.9.1)"]
 
 [[package]]
 name = "pyparsing"
@@ -656,7 +678,7 @@ multidict = ">=4.0"
 [metadata]
 lock-version = "1.1"
 python-versions = "^3.8"
-content-hash = "ad13ce5d38265cf87d732426700b889ec13ee2755bccffb63cba014aa31c4600"
+content-hash = "58cf4476dae46a6606a400eb6652a3ed8831c947da7acc76b381bb2208aed8d1"
 
 [metadata.files]
 aiohttp = [
@@ -858,8 +880,8 @@ frozenlist = [
     {file = "frozenlist-1.2.0.tar.gz", hash = "sha256:68201be60ac56aff972dc18085800b6ee07973c49103a8aba669dee3d71079de"},
 ]
 fsspec = [
-    {file = "fsspec-2021.11.1-py3-none-any.whl", hash = "sha256:bcb136caa37e1470dd8314a7d3917cb9b25dd9da44c10d36df556ab4ef038185"},
-    {file = "fsspec-2021.11.1.tar.gz", hash = "sha256:03683e606651d5e4bd9180525d57477bd5430e5dc68d2e459835dc14cecc3dd4"},
+    {file = "fsspec-2022.1.0-py3-none-any.whl", hash = "sha256:256e2be44e62430c9ca8dac2e480384b00a3c52aef4e2b0b7204163fdc861d37"},
+    {file = "fsspec-2022.1.0.tar.gz", hash = "sha256:0bdd519bbf4d8c9a1d893a50b5ebacc89acd0e1fe0045d2f7b0e0c1af5990edc"},
 ]
 huggingface-hub = [
     {file = "huggingface_hub-0.2.1-py3-none-any.whl", hash = "sha256:e41f0488c8cd9c720e962f16dca23cbb60df2c2931c5f22fc035f949852794c6"},
@@ -969,6 +991,22 @@ multiprocess = [
 mypy-extensions = [
     {file = "mypy_extensions-0.4.3-py2.py3-none-any.whl", hash = "sha256:090fedd75945a69ae91ce1303b5824f428daf5a028d2f6ab8a299250a846f15d"},
     {file = "mypy_extensions-0.4.3.tar.gz", hash = "sha256:2d82818f5bb3e369420cb3c4060a7970edba416647068eb4c5343488a6c604a8"},
+]
+ninja = [
+    {file = "ninja-1.10.2.3-py2.py3-none-macosx_10_9_universal2.macosx_10_9_x86_64.macosx_11_0_arm64.macosx_11_0_universal2.whl", hash = "sha256:d5e0275d28997a750a4f445c00bdd357b35cc334c13cdff13edf30e544704fbd"},
+    {file = "ninja-1.10.2.3-py2.py3-none-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:5ea785bf6a15727040835256577239fa3cf5da0d60e618c307aa5efc31a1f0ce"},
+    {file = "ninja-1.10.2.3-py2.py3-none-manylinux_2_17_ppc64le.manylinux2014_ppc64le.whl", hash = "sha256:29570a18d697fc84d361e7e6330f0021f34603ae0fcb0ef67ae781e9814aae8d"},
+    {file = "ninja-1.10.2.3-py2.py3-none-manylinux_2_17_s390x.manylinux2014_s390x.whl", hash = "sha256:21a1d84d4c7df5881bfd86c25cce4cf7af44ba2b8b255c57bc1c434ec30a2dfc"},
+    {file = "ninja-1.10.2.3-py2.py3-none-manylinux_2_5_i686.manylinux1_i686.whl", hash = "sha256:9ca8dbece144366d5f575ffc657af03eb11c58251268405bc8519d11cf42f113"},
+    {file = "ninja-1.10.2.3-py2.py3-none-manylinux_2_5_x86_64.manylinux1_x86_64.whl", hash = "sha256:279836285975e3519392c93c26e75755e8a8a7fafec9f4ecbb0293119ee0f9c6"},
+    {file = "ninja-1.10.2.3-py2.py3-none-musllinux_1_1_aarch64.whl", hash = "sha256:cc8b31b5509a2129e4d12a35fc21238c157038022560aaf22e49ef0a77039086"},
+    {file = "ninja-1.10.2.3-py2.py3-none-musllinux_1_1_i686.whl", hash = "sha256:688167841b088b6802e006f911d911ffa925e078c73e8ef2f88286107d3204f8"},
+    {file = "ninja-1.10.2.3-py2.py3-none-musllinux_1_1_ppc64le.whl", hash = "sha256:840a0b042d43a8552c4004966e18271ec726e5996578f28345d9ce78e225b67e"},
+    {file = "ninja-1.10.2.3-py2.py3-none-musllinux_1_1_s390x.whl", hash = "sha256:84be6f9ec49f635dc40d4b871319a49fa49b8d55f1d9eae7cd50d8e57ddf7a85"},
+    {file = "ninja-1.10.2.3-py2.py3-none-musllinux_1_1_x86_64.whl", hash = "sha256:6bd76a025f26b9ae507cf8b2b01bb25bb0031df54ed685d85fc559c411c86cf4"},
+    {file = "ninja-1.10.2.3-py2.py3-none-win32.whl", hash = "sha256:740d61fefb4ca13573704ee8fe89b973d40b8dc2a51aaa4e9e68367233743bb6"},
+    {file = "ninja-1.10.2.3-py2.py3-none-win_amd64.whl", hash = "sha256:0560eea57199e41e86ac2c1af0108b63ae77c3ca4d05a9425a750e908135935a"},
+    {file = "ninja-1.10.2.3.tar.gz", hash = "sha256:e1b86ad50d4e681a7dbdff05fc23bb52cb773edb90bc428efba33fa027738408"},
 ]
 numpy = [
     {file = "numpy-1.21.1-cp37-cp37m-macosx_10_9_x86_64.whl", hash = "sha256:38e8648f9449a549a7dfe8d8755a5979b45b3538520d1e735637ef28e8c2dc50"},
@@ -1083,6 +1121,10 @@ pyarrow = [
     {file = "pyarrow-6.0.1-cp39-cp39-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:725d3fe49dfe392ff14a8ae6a75b230a60e8985f2b621b18cfa912fe02b65f1a"},
     {file = "pyarrow-6.0.1-cp39-cp39-win_amd64.whl", hash = "sha256:2403c8af207262ce8e2bc1a9d19313941fd2e424f1cb3c4b749c17efe1fd699a"},
     {file = "pyarrow-6.0.1.tar.gz", hash = "sha256:423990d56cd8f12283b67367d48e142739b789085185018eb03d05087c3c8d43"},
+]
+pybind11 = [
+    {file = "pybind11-2.9.1-py2.py3-none-any.whl", hash = "sha256:b570d17ed34b0f8ff43f5647833db87353be9afca0c7d1d69e92706b10a9c961"},
+    {file = "pybind11-2.9.1.tar.gz", hash = "sha256:40f8e57af6fcaa7eb5d727707125f90f8daa0993f28a9981a232d40c85dbbcb0"},
 ]
 pyparsing = [
     {file = "pyparsing-3.0.6-py3-none-any.whl", hash = "sha256:04ff808a5b90911829c55c4e26f75fa5ca8a2f5f36aa3a51f68e27033341d3e4"},
