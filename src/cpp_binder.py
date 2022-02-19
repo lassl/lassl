@@ -29,9 +29,10 @@ class Binder(object):
     def name(self):
         return "lassl"
 
-    @staticmethod
-    def includes():
-        return []
+    def includes(self):
+        return [
+            os.path.join(self.base_path, "includes"),
+        ]
 
     @staticmethod
     def sources():
