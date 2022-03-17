@@ -4,7 +4,7 @@ from typing import List, Optional
 from numpy.random import choice
 from transformers import AutoTokenizer, HfArgumentParser
 
-from src.utils import batch_iterator, load_corpora
+from lassl.utils import batch_iterator, load_corpora
 
 model_type_to_predefined_model = {
     "bert-cased": "bert-base-cased",
