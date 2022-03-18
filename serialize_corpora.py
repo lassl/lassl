@@ -2,13 +2,13 @@ from dataclasses import dataclass, field
 
 from transformers import HfArgumentParser
 
-from src.processors import (
+from lassl.processors import (
     AlbertProcessor,
     BertProcessor,
     GPT2Processor,
     RobertaProcessor,
 )
-from src.utils import load_corpora
+from lassl.utils import load_corpora
 
 model_type_to_processor = {
     "bert": BertProcessor,

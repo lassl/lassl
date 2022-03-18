@@ -4,7 +4,7 @@ from typing import Generator, Union
 import datasets
 from datasets import load_dataset
 
-SENT_TEXT_SCRIPT = str(Path("./src/loading/sent_text.py").absolute())
+SENT_TEXT_SCRIPT = str((Path(__file__).parent / "loading" / "sent_text.py").resolve().absolute())
 
 
 def batch_iterator(

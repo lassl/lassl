@@ -17,11 +17,11 @@ import unittest
 from typing import List, Optional, Union
 
 import numpy as np
-from torch.utils.data import Dataset as TorchDataset
 from datasets import Dataset, load_dataset
+from torch.utils.data import Dataset as TorchDataset
 from tqdm import tqdm
 
-from src.cpp_binder import get_datasets_utils
+from .cpp_binder import get_datasets_utils
 
 
 class DatasetBlender(TorchDataset):

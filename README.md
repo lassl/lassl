@@ -31,21 +31,11 @@
 ## What is LASSL
 LASSL is a **LA**nguage framework for **S**elf-**S**upervised **L**earning. LASSL aims to provide an easy-to-use framework for pretraining language model by only using Huggingface's Transformers and Datasets.
 
-
 ## Environment setting
 You can install the required packages following:
 ```bash
-pip3 install -r requirements.txt
+pip3 install .
 ```
-
-or you can set environment with poetry following:
-```bash
-# Install poetry 
-curl -sSL https://raw.githubusercontent.com/python-poetry/poetry/master/get-poetry.py | python -
-# Environment setting with poetry
-poetry install
-```
-
 
 ## How to Use
 - Language model pretraining can be divided into three steps: **1. Train Tokenizer**, **2. Serialize Corpus**, **3.Pretrain Language Model**.
@@ -54,17 +44,6 @@ poetry install
 ### 1. Train Tokenizer
 ```bash
 python3 train_tokenizer.py \
-    --corpora_dir $CORPORA_DIR \
-    --corpus_type $CORPUS_TYPE \
-    --sampling_ratio $SAMPLING_RATIO \
-    --model_type $MODEL_TYPE \
-    --vocab_size $VOCAB_SIZE \
-    --min_frequency $MIN_FREQUENCY
-```
-
-```bash
-# poetry 이용
-poetry run python3 train_tokenizer.py \
     --corpora_dir $CORPORA_DIR \
     --corpus_type $CORPUS_TYPE \
     --sampling_ratio $SAMPLING_RATIO \
@@ -84,25 +63,9 @@ python3 serialize_corpora.py \
     --num_proc $NUM_PROC
 ```
 
-```bash
-# with poetry
-poetry run python3 serialize_corpora.py \
-    --model_type $MODEL_TYPE \
-    --tokenizer_dir $TOKENIZER_DIR \
-    --corpora_dir $CORPORA_DIR \
-    --corpus_type $CORPUS_TYPE \
-    --max_length $MAX_LENGTH \
-    --num_proc $NUM_PROC
-```
-
 ### 3. Pretrain Language Model
 ```bash
 python3 pretrain_language_model.py --config_path $CONFIG_PATH
-```
-
-```bash
-# with poetry
-poetry run python3 pretrain_language_model.py --config_path $CONFIG_PATH
 ```
 
 ```bash

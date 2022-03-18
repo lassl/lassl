@@ -1,46 +1,36 @@
-"""
-Run the following instruction in the library root path
-
-python -m tests.test_blender
-"""
-
-import unittest
-from datasets import load_dataset
-from src.blender import DatasetBlender
 from collections import Counter
 
+import pytest
+from datasets import load_dataset
 
-class BlenderTest(unittest.TestCase):
-    def test_blending(self):
-        try:
-            from langid import classify
-        except ImportError as _:
-            raise ImportError(
-                "To test dataset blending, you need to install langid. "
-                "Please install langid using `pip install langid`."
-            )
+from lassl.blender import DatasetBlender
 
-        en = load_dataset("squad").data["train"]["context"]
-        ko = load_dataset("oscar", "unshuffled_deduplicated_ko").data["train"]["text"]
-        ja = load_dataset("amazon_reviews_multi", "ja").data["train"]["review_body"]
 
-        weights = {"en": 0.2, "ko": 0.5, "ja": 0.3}
-        datasets = {"en": en, "ko": ko, "ja": ja}
-
-        blend = DatasetBlender(
-            datasets=list(datasets.values()),
-            weights=list(weights.values()),
+def test_blending():
+    try:
+        from langid import classify
+    except ImportError as _:
+        raise ImportError(
+            "To test dataset blending, you need to install langid. "
+            "Please install langid using `pip install langid`."
         )
 
-        langs = [classify(str(blend[i]))[0] for i in range(10)]
-        counts = Counter(langs)
+    en = load_dataset("squad").data["train"]["context"]
+    ko = load_dataset("oscar", "unshuffled_deduplicated_ko").data["train"]["text"]
+    ja = load_dataset("amazon_reviews_multi", "ja").data["train"]["review_body"]
 
-        self.assertEqual(int(counts["ko"]), int(weights["ko"] * 10))
-        self.assertEqual(int(counts["en"]), int(weights["en"] * 10))
-        self.assertEqual(int(counts["ja"]), int(weights["ja"] * 10))
-        print("All tests are passed ;)")
+    weights = {"en": 0.2, "ko": 0.5, "ja": 0.3}
+    datasets = {"en": en, "ko": ko, "ja": ja}
 
+    blend = DatasetBlender(
+        datasets=list(datasets.values()),
+        weights=list(weights.values()),
+    )
 
-if __name__ == "__main__":
-    test = BlenderTest()
-    test.test_blending()
+    langs = [classify(str(blend[i]))[0] for i in range(10)]
+    counts = Counter(langs)
+
+    assert int(counts["ko"]) == int(weights["ko"] * 10)
+    assert int(counts["en"]) == int(weights["en"] * 10)
+    assert int(counts["ja"]) == int(weights["ja"] * 10)
+    print("All tests are passed ;)")
