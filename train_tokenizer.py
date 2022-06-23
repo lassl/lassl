@@ -6,11 +6,12 @@ from transformers import AutoTokenizer, HfArgumentParser
 
 from lassl.utils import batch_iterator, load_corpora
 
-model_type_to_predefined_model = {
+MODEL_TYPE_TO_PREDEFINED_MODEL = {
     "bert-cased": "bert-base-cased",
     "gpt2": "gpt2",
     "roberta": "roberta-base",
     "albert": "albert-base-v2",
+    "bart": "facebook/bart-base",
 }
 
 
@@ -41,15 +42,8 @@ class DataArguments:
 @dataclass
 class ModelArguments:
     model_type: str = field(
-        default="roberta",
-        metadata={
-            "choices": [
-                "bert-cased",
-                "gpt2",
-                "roberta",
-                "albert",
-            ]
-        },
+        default="bart",
+        metadata={"choices": ["bert-cased", "gpt2", "roberta", "albert", "bart"]},
     )
     vocab_size: int = field(
         default=30000,
@@ -76,7 +70,7 @@ def main():
     else:
         print("Since sampling_ratio >= 1.0, all corpora will be used.")
 
-    tokenizer = AutoTokenizer.from_pretrained(model_type_to_predefined_model[model_args.model_type])
+    tokenizer = AutoTokenizer.from_pretrained(MODEL_TYPE_TO_PREDEFINED_MODEL[model_args.model_type])
     data_iterator = batch_iterator(corpora, batch_size=data_args.batch_size)
 
     if model_args.additional_special_tokens:
