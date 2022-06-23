@@ -7,6 +7,7 @@ from lassl.processors import (
     BertProcessor,
     GPT2Processor,
     RobertaProcessor,
+    BartProcessor
 )
 from lassl.utils import load_corpora
 
@@ -15,30 +16,32 @@ model_type_to_processor = {
     "roberta": RobertaProcessor,
     "gpt2": GPT2Processor,
     "albert": AlbertProcessor,
+    "bart" : BartProcessor
 }
 
 
 @dataclass
 class Arguments:
     model_type: str = field(
-        default="roberta",
+        default="bart",
         metadata={
             "choices": [
                 "bert",
                 "roberta",
                 "gpt2",
                 "albert",
+                "bart"
             ]
         },
     )
     tokenizer_dir: str = field(
-        default="tokenizers/roberta",
+        default="hyunwoongko/kobart",
     )
     corpora_dir: str = field(
-        default="corpora/kowiki",
+        default="corpora",
     )
     corpus_type: str = field(
-        default="docu_json",
+        default="sent_text",
         metadata={
             "choices": [
                 "docu_text",
@@ -52,7 +55,7 @@ class Arguments:
         default=512,
     )
     num_proc: int = field(
-        default=4,
+        default=1,
     )
     batch_size: int = field(
         default=1000,

@@ -1,6 +1,7 @@
 import logging
 import os
 from argparse import ArgumentParser
+import torch
 
 from datasets import Dataset
 from omegaconf import OmegaConf
@@ -19,6 +20,7 @@ from lassl.collators import (
     DataCollatorForBert,
     DataCollatorForGpt2,
     DataCollatorForRoberta,
+    DataCollatorForBart
 )
 
 model_type_to_collator = {
@@ -26,6 +28,7 @@ model_type_to_collator = {
     "albert": DataCollatorForAlbert,
     "roberta": DataCollatorForRoberta,
     "gpt2": DataCollatorForGpt2,
+    "bart" : DataCollatorForBart
 }
 
 logger = logging.getLogger(__name__)
@@ -39,6 +42,7 @@ def get_main_args():
 
 
 def main():
+    os.environ["CUDA_VISIBLE_DEVICES "]="0,1"
     args = get_main_args()
     nested_args = OmegaConf.load(args.config_path)
     model_args = nested_args.model

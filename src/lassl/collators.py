@@ -1,5 +1,6 @@
 import random
 from typing import Any, Dict, List, Optional
+import torch
 
 from transformers import DataCollatorForLanguageModeling, DataCollatorForWholeWordMask
 from transformers.data.data_collator import _torch_collate_batch
@@ -163,4 +164,54 @@ class DataCollatorForGpt2:
             )
         }
         batch["labels"] = batch["input_ids"].clone()
+        return batch
+
+
+class DataCollatorForBart:
+    """
+    Processing training examples to mini-batch for Bart (text-infilling)
+    """
+
+    def __init__(
+        self,
+        tokenizer: PreTrainedTokenizerBase,
+        pad_to_multiple_of: int = 8,
+        masking_rate : float = 0.3,
+        span_length_param : float = 3.
+
+    ):
+        self.tokenizer = tokenizer
+        self.pad_to_multiple_of = pad_to_multiple_of
+        self.masking_rate = masking_rate
+        self.span_length_param = span_length_param
+
+    def __call__(self, examples):
+        examples = [example["input_ids"] for example in examples]
+        # make labels and decoder_input_ids
+        batch = {
+            "labels": _torch_collate_batch(
+                examples, tokenizer=self.tokenizer, pad_to_multiple_of=self.pad_to_multiple_of
+            )
+        }
+        batched_bos = torch.full((len(examples), 1), self.tokenizer.bos_token_id)
+        batch["decoder_input_ids"] = torch.cat((batched_bos, batch["labels"][:,:-1].clone()), dim=1)
+        
+        # corrupt input for text-infilling
+        mask_token = self.tokenizer.mask_token_id
+        corrupt_examples = []
+        for e in examples:
+            masking_length = int(len(e) * self.masking_rate)
+            masked_length = 0
+            ex_rest_len = len(e)
+            while masking_length > masked_length:
+                span_length = torch.min(torch.poisson(torch.tensor([self.span_length_param])), torch.tensor([ex_rest_len-1])).long().item()
+                start_index = ((ex_rest_len - span_length)*torch.rand(1)).long().item()
+                e = e[:start_index] + [mask_token] + e[start_index + span_length:]
+                ex_rest_len -= span_length - 1
+                masked_length += span_length
+            corrupt_examples.append(e)
+        # pad & batchfy input_ids
+        batch["input_ids"] = _torch_collate_batch(
+                corrupt_examples, tokenizer=self.tokenizer, pad_to_multiple_of=self.pad_to_multiple_of
+            )
         return batch
