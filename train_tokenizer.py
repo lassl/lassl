@@ -11,16 +11,17 @@ model_type_to_predefined_model = {
     "gpt2": "gpt2",
     "roberta": "roberta-base",
     "albert": "albert-base-v2",
+    "bart": "facebook/bart-base",
 }
 
 
 @dataclass
 class DataArguments:
     corpora_dir: str = field(
-        default="corpora/kowiki",
+        default="corpora",
     )
     corpus_type: str = field(
-        default="docu_json",
+        default="sent_text",
         metadata={
             "choices": [
                 "docu_text",
@@ -41,13 +42,14 @@ class DataArguments:
 @dataclass
 class ModelArguments:
     model_type: str = field(
-        default="roberta",
+        default="bart",
         metadata={
             "choices": [
                 "bert-cased",
                 "gpt2",
                 "roberta",
                 "albert",
+                "bart"
             ]
         },
     )
