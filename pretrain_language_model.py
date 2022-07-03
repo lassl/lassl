@@ -14,19 +14,7 @@ from transformers import (
 )
 from transformers.trainer_utils import get_last_checkpoint
 
-from lassl.collators import (
-    DataCollatorForAlbert,
-    DataCollatorForBert,
-    DataCollatorForGpt2,
-    DataCollatorForRoberta,
-)
-
-model_type_to_collator = {
-    "bert": DataCollatorForBert,
-    "albert": DataCollatorForAlbert,
-    "roberta": DataCollatorForRoberta,
-    "gpt2": DataCollatorForGpt2,
-}
+from lassl import MODEL_TYPE_TO_COLLATOR
 
 logger = logging.getLogger(__name__)
 
@@ -58,7 +46,7 @@ def main():
     model = AutoModelForPreTraining.from_config(model_config)
     model.resize_token_embeddings(tokenizer.vocab_size)
 
-    data_collator = model_type_to_collator[model_args.model_type](tokenizer=tokenizer, **collator_args)
+    data_collator = MODEL_TYPE_TO_COLLATOR[model_args.model_type](tokenizer=tokenizer, **collator_args)
 
     if training_args.do_eval and data_args.test_size:
         train_dataset, eval_dataset = (

@@ -4,15 +4,8 @@ from typing import List, Optional
 from numpy.random import choice
 from transformers import AutoTokenizer, HfArgumentParser
 
+from lassl import MODEL_TYPE_TO_PREDEFINED_MODEL
 from lassl.utils import batch_iterator, load_corpora
-
-MODEL_TYPE_TO_PREDEFINED_MODEL = {
-    "bert-cased": "bert-base-cased",
-    "gpt2": "gpt2",
-    "roberta": "roberta-base",
-    "albert": "albert-base-v2",
-    "bart": "facebook/bart-base",
-}
 
 
 @dataclass
