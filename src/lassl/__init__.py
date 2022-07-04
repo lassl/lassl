@@ -1,3 +1,4 @@
+from lassl.callbacks import TokenizerSaveCallback
 from lassl.collators import (
     DataCollatorForAlbert,
     DataCollatorForBart,
