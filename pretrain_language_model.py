@@ -2,7 +2,6 @@ import logging
 import os
 from argparse import ArgumentParser
 
-from datasets import Dataset
 from omegaconf import OmegaConf
 from transformers import (
     CONFIG_MAPPING,
@@ -14,6 +13,7 @@ from transformers import (
 )
 from transformers.trainer_utils import get_last_checkpoint
 
+from datasets import Dataset
 from lassl import MODEL_TYPE_TO_COLLATOR
 
 logger = logging.getLogger(__name__)
@@ -35,7 +35,9 @@ def main():
     training_args = TrainingArguments(**nested_args.training)
 
     train_dataset = Dataset.load_from_disk(data_args.data_dir)
-    eval_dataset = None
+    train_dataset.set_format("torch")
+
+    valid_dataset = None
     tokenizer = AutoTokenizer.from_pretrained(data_args.data_dir)
 
     assert (
@@ -49,21 +51,21 @@ def main():
     data_collator = MODEL_TYPE_TO_COLLATOR[model_args.model_type](tokenizer=tokenizer, **collator_args)
 
     if training_args.do_eval and data_args.test_size:
-        train_dataset, eval_dataset = (
+        train_dataset, valid_dataset = (
             _ for _ in train_dataset.train_test_split(test_size=data_args.test_size).values()
         )
         logger.info(
-            f"eval_dataset is set to {len(eval_dataset)} samples. pre-training is run by consuming training dataset whose number of samples are {len(train_dataset)}."
+            f"valid_dataset is set to {len(valid_dataset)} samples. pre-training is run by consuming training dataset whose number of samples are {len(train_dataset)}."
         )
     else:
         logger.info(
-            f"eval_dataset is not set. pre-training is run by consuming training dataset whose number of samples are {len(train_dataset)}."
+            f"valid_dataset is not set. pre-training is run by consuming training dataset whose number of samples are {len(train_dataset)}."
         )
 
     trainer = Trainer(
         args=training_args,
         train_dataset=train_dataset,
-        eval_dataset=eval_dataset,
+        valid_dataset=valid_dataset,
         model=model,
         tokenizer=tokenizer,
         data_collator=data_collator,

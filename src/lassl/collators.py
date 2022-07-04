@@ -178,12 +178,14 @@ class DataCollatorForBart:
     def __init__(
         self,
         tokenizer: PreTrainedTokenizerBase,
+        mlm_probability=0.15,
+        poisson_lambda=3,
         pad_to_multiple_of: Optional[int] = None,
     ):
         self.tokenizer = tokenizer
+        self.mlm_probability = mlm_probability
+        self.poisson_dist = torch.distributions.Poisson(poisson_lambda)
         self.pad_to_multiple_of = pad_to_multiple_of
-        self.poisson_dist = torch.distributions.Poisson(3)
-        self.masking_rate = 0.15
 
     def __call__(self, examples):
         examples = [example["input_ids"] for example in examples]
@@ -206,7 +208,7 @@ class DataCollatorForBart:
         for example in examples:
             source_tokens_ids = example
             source_tokens_ids_length = example.size(0)
-            masking_length = int(source_tokens_ids_length * self.masking_rate)
+            masking_length = int(source_tokens_ids_length * self.mlm_probability)
             masked_length = 0
 
             while masked_length < masking_length:
