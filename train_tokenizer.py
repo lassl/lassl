@@ -12,6 +12,7 @@ model_type_to_predefined_model = {
     "roberta": "roberta-base",
     "albert": "albert-base-v2",
     "bart": "facebook/bart-base",
+    "t5" : "t5-small"
 }
 
 
@@ -42,14 +43,15 @@ class DataArguments:
 @dataclass
 class ModelArguments:
     model_type: str = field(
-        default="bart",
+        default="t5",
         metadata={
             "choices": [
                 "bert-cased",
                 "gpt2",
                 "roberta",
                 "albert",
-                "bart"
+                "bart",
+                "t5"
             ]
         },
     )
