@@ -7,7 +7,8 @@ from lassl.processors import (
     BertProcessor,
     GPT2Processor,
     RobertaProcessor,
-    BartProcessor
+    BartProcessor,
+    T5Processor
 )
 from lassl.utils import load_corpora
 
@@ -16,26 +17,28 @@ model_type_to_processor = {
     "roberta": RobertaProcessor,
     "gpt2": GPT2Processor,
     "albert": AlbertProcessor,
-    "bart" : BartProcessor
+    "bart" : BartProcessor,
+    "t5" : T5Processor
 }
 
 
 @dataclass
 class Arguments:
     model_type: str = field(
-        default="bart",
+        default="t5",
         metadata={
             "choices": [
                 "bert",
                 "roberta",
                 "gpt2",
                 "albert",
-                "bart"
+                "bart",
+                "t5"
             ]
         },
     )
     tokenizer_dir: str = field(
-        default="hyunwoongko/kobart",
+        default="KETI-AIR/ke-t5-small",
     )
     corpora_dir: str = field(
         default="corpora",
@@ -64,7 +67,7 @@ class Arguments:
         default=1000,
     )
     load_from_cache_file: bool = field(
-        default=True,
+        default=False,
     )
     keep_in_memory: bool = field(
         default=False,
