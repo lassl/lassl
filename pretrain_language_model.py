@@ -9,6 +9,7 @@ from transformers import (
     CONFIG_MAPPING,
     AutoModelForPreTraining,
     AutoTokenizer,
+    DataCollator,
     Trainer,
     TrainingArguments,
     set_seed,
@@ -20,7 +21,8 @@ from lassl.collators import (
     DataCollatorForBert,
     DataCollatorForGpt2,
     DataCollatorForRoberta,
-    DataCollatorForBart
+    DataCollatorForBart,
+    DataCollatorForT5
 )
 
 model_type_to_collator = {
@@ -28,7 +30,8 @@ model_type_to_collator = {
     "albert": DataCollatorForAlbert,
     "roberta": DataCollatorForRoberta,
     "gpt2": DataCollatorForGpt2,
-    "bart" : DataCollatorForBart
+    "bart" : DataCollatorForBart,
+    "t5" : DataCollatorForT5
 }
 
 logger = logging.getLogger(__name__)
@@ -42,7 +45,7 @@ def get_main_args():
 
 
 def main():
-    os.environ["CUDA_VISIBLE_DEVICES "]="0,1"
+    os.environ["CUDA_VISIBLE_DEVICES "]="0"
     args = get_main_args()
     nested_args = OmegaConf.load(args.config_path)
     model_args = nested_args.model
