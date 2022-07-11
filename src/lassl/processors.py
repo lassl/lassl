@@ -248,11 +248,11 @@ class T5Processor(BaseProcessor):
             # no document seperation
             self._buffer.extend(input_ids)
 
-            while len(self._buffer) >= self._chunk_size-1:
+            while len(self._buffer) >= self._chunk_size:
                 # slice upto chunk_size - 1 since chunk_size contains eos token already 
                 # and add eos token at the end of sequence
-                chunk_ids = self._buffer[: self._chunk_size-1] + [self._tokenizer.eos_token_id] 
+                chunk_ids = self._buffer[: self._chunk_size] 
                 dict_of_training_examples["input_ids"].append(chunk_ids)
-                self._buffer = self._buffer[self._chunk_size-1 :]
+                self._buffer = self._buffer[self._chunk_size:]
 
         return dict_of_training_examples

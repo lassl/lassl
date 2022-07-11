@@ -262,7 +262,7 @@ class DataCollatorForT5:
         is_noise = span_num % 2 == 1
         return is_noise[:orig_len]
 
-    def _noise_span_to_unique_sentinel(self, tokens, noise_mask) -> torch.LongTensor:
+    def _noise_span_to_unique_sentinel(self, tokens, noise_mask, append_last_sentinel=False) -> torch.LongTensor:
         ''' pytorch-ported version of https://github.com/google-research/text-to-text-transfer-transformer/blob/bb545f19ec221e6203dd05505573fbc0c0a9001f/t5/data/preprocessors.py#L3074'''
         tokens = torch.tensor(tokens)
         prev_token_is_noise = torch.cat((torch.tensor([0]), noise_mask[:-1]), dim=0).bool()
@@ -273,7 +273,13 @@ class DataCollatorForT5:
         sentinel = self.tokenizer.get_vocab()["<extra_id_0>"] + 1 - torch.cumsum(first_noise_tokens.long(), dim=0)
 
         tokens = torch.where(first_noise_tokens, sentinel, tokens)
-        return torch.masked_select(tokens, torch.logical_not(subsequent_noise_tokens))
+        ret = torch.masked_select(tokens, torch.logical_not(subsequent_noise_tokens))
+        if append_last_sentinel: # target masking needs additional sentinel token at last position
+            last_sentinel_id = sentinel.min().reshape(-1) - 1
+            ret = torch.cat((ret, last_sentinel_id), dim=0)
+        ret = torch.cat((ret, torch.tensor([self.tokenizer.eos_token_id], dtype=torch.long)), dim=0) # add eos token
+        return ret
+
 
     def __call__(self, examples):
         examples = [example["input_ids"] for example in examples]
@@ -281,11 +287,11 @@ class DataCollatorForT5:
         example_len = len(examples[0])
         noise_masks = [self._random_spans_noise_mask(example_len) for _ in range(example_n)]
         inputs = [self._noise_span_to_unique_sentinel(example, noise_mask) for example, noise_mask in zip(examples, noise_masks)]
-        targets = [self._noise_span_to_unique_sentinel(example, ~noise_mask) for example, noise_mask in zip(examples, noise_masks)]
-        # make labels and decoder_input_ids
+        targets = [self._noise_span_to_unique_sentinel(example, ~noise_mask, append_last_sentinel=True) for example, noise_mask in zip(examples, noise_masks)]
+        # make labels and encoder_input_ids
         batch = {
             "input_ids": _torch_collate_batch(
-                inputs, tokenizer=self.tokenizer, pad_to_multiple_of=None # already set to 512 by design
+                inputs, tokenizer=self.tokenizer, pad_to_multiple_of=self.pad_to_multiple_of
             ),
             "labels": _torch_collate_batch(
                 targets, tokenizer=self.tokenizer, pad_to_multiple_of=self.pad_to_multiple_of
