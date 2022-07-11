@@ -190,7 +190,7 @@ class DataCollatorForBart:
         # make labels and decoder_input_ids
         batch = {
             "labels": _torch_collate_batch(
-                examples, tokenizer=self.tokenizer, pad_to_multiple_of=self.pad_to_multiple_of
+                examples, tokenizer=self.tokenizer, pad_to_multiple_of=None
             )
         }
         batched_bos = torch.full((len(examples), 1), self.tokenizer.bos_token_id)
@@ -235,7 +235,6 @@ class DataCollatorForT5:
 
     def _random_spans_noise_mask(self, length : int) -> torch.BoolTensor:
         ''' pytorch-ported version of https://github.com/google-research/text-to-text-transfer-transformer/blob/bb545f19ec221e6203dd05505573fbc0c0a9001f/t5/data/preprocessors.py#L2901'''
-        assert torch.__version__.split(".")[1] == '11', "Currently supporting only version 1.11.x due to scatter_reduce compatibility."
         orig_len = length
         length = max(length, 2) # set minumum to 2 to avoid degeneracy
         num_noise_tokens = round(self.noise_density * length)
@@ -250,7 +249,7 @@ class DataCollatorForT5:
             bars = bars[torch.randperm(bars.size(0))]
             bars = torch.cat((torch.tensor([0]), bars), dim=0) # to make segment 0 nonzero
             segment_id = torch.cumsum(bars, dim=0)
-            segment_length = torch.scatter_reduce(torch.ones_like(segment_id), 0, segment_id, reduce = 'sum')
+            segment_length = torch.zeros(num_segments, dtype=torch.long).scatter_add(0, segment_id, torch.ones_like(segment_id))
             return segment_length 
         
         noise_span_lengths = _random_segmentation(num_noise_tokens, num_noise_spans)
@@ -269,9 +268,7 @@ class DataCollatorForT5:
         first_noise_tokens = torch.logical_and(
             noise_mask, torch.logical_not(prev_token_is_noise))
         subsequent_noise_tokens = torch.logical_and(noise_mask, prev_token_is_noise)
-
         sentinel = self.tokenizer.get_vocab()["<extra_id_0>"] + 1 - torch.cumsum(first_noise_tokens.long(), dim=0)
-
         tokens = torch.where(first_noise_tokens, sentinel, tokens)
         ret = torch.masked_select(tokens, torch.logical_not(subsequent_noise_tokens))
         if append_last_sentinel: # target masking needs additional sentinel token at last position
@@ -288,13 +285,13 @@ class DataCollatorForT5:
         noise_masks = [self._random_spans_noise_mask(example_len) for _ in range(example_n)]
         inputs = [self._noise_span_to_unique_sentinel(example, noise_mask) for example, noise_mask in zip(examples, noise_masks)]
         targets = [self._noise_span_to_unique_sentinel(example, ~noise_mask, append_last_sentinel=True) for example, noise_mask in zip(examples, noise_masks)]
-        # make labels and encoder_input_ids
+        # make labels and input_ids
         batch = {
             "input_ids": _torch_collate_batch(
-                inputs, tokenizer=self.tokenizer, pad_to_multiple_of=self.pad_to_multiple_of
+                inputs, tokenizer=self.tokenizer, pad_to_multiple_of=None # all samples' length are set to self.max_length by design
             ),
             "labels": _torch_collate_batch(
-                targets, tokenizer=self.tokenizer, pad_to_multiple_of=self.pad_to_multiple_of
+                targets, tokenizer=self.tokenizer, pad_to_multiple_of=None # labels' length are all sample by design
             )
         }
         return batch

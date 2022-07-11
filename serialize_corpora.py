@@ -38,7 +38,10 @@ class Arguments:
         },
     )
     tokenizer_dir: str = field(
-        default="KETI-AIR/ke-t5-small",
+        default = "tokenizers/t5"
+        ### pretrained options
+        # default="KETI-AIR/ke-t5-small",
+        # default="hyunwoongko/kobart"
     )
     corpora_dir: str = field(
         default="corpora",
@@ -67,7 +70,7 @@ class Arguments:
         default=1000,
     )
     load_from_cache_file: bool = field(
-        default=False,
+        default=True,
     )
     keep_in_memory: bool = field(
         default=False,
