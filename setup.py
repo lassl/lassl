@@ -28,6 +28,7 @@ setup(
     zip_safe=False,
     python_requires=">=3.8",
     install_requires=install_requires,  # External packages as dependencies
+    dependency_links=["https://download.pytorch.org/whl/cu113"],
     classifiers=[
         "Development Status :: 3 - Alpha",
         "Intended Audience :: Developers",

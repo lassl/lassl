@@ -2,8 +2,11 @@ import random
 from typing import Any, Dict, List, Optional
 import torch
 
+import torch
+from torch.nn.utils.rnn import pad_sequence
 from transformers import DataCollatorForLanguageModeling, DataCollatorForWholeWordMask
 from transformers.data.data_collator import _torch_collate_batch
+from transformers.models.bart.modeling_bart import shift_tokens_right
 from transformers.tokenization_utils_base import PreTrainedTokenizerBase
 
 
@@ -167,54 +170,62 @@ class DataCollatorForGpt2:
         return batch
 
 
+# Ref: https://github.com/cosmoquester/transformers-bart-pretrain/blob/master/transformers_bart_pretrain/data.py
 class DataCollatorForBart:
     """
     Processing training examples to mini-batch for Bart (text-infilling)
     """
-
     def __init__(
         self,
         tokenizer: PreTrainedTokenizerBase,
-        pad_to_multiple_of: int = 8,
-        masking_rate : float = 0.3,
-        span_length_param : float = 3.
-
+        mlm_probability=0.15,
+        poisson_lambda=3,
+        pad_to_multiple_of: Optional[int] = None,
     ):
         self.tokenizer = tokenizer
+        self.mlm_probability = mlm_probability
+        self.poisson_dist = torch.distributions.Poisson(poisson_lambda)
         self.pad_to_multiple_of = pad_to_multiple_of
-        self.masking_rate = masking_rate
-        self.span_length_param = span_length_param
 
     def __call__(self, examples):
         examples = [example["input_ids"] for example in examples]
-        # make labels and decoder_input_ids
-        batch = {
-            "labels": _torch_collate_batch(
-                examples, tokenizer=self.tokenizer, pad_to_multiple_of=None
-            )
-        }
-        batched_bos = torch.full((len(examples), 1), self.tokenizer.bos_token_id)
-        batch["decoder_input_ids"] = torch.cat((batched_bos, batch["labels"][:,:-1].clone()), dim=1)
-        
-        # corrupt input for text-infilling
-        mask_token = self.tokenizer.mask_token_id
-        corrupt_examples = []
-        for e in examples:
-            masking_length = int(len(e) * self.masking_rate)
-            masked_length = 0
-            ex_rest_len = len(e)
-            while masking_length > masked_length:
-                span_length = torch.min(torch.poisson(torch.tensor([self.span_length_param])), torch.tensor([ex_rest_len-1])).long().item()
-                start_index = ((ex_rest_len - span_length)*torch.rand(1)).long().item()
-                e = e[:start_index] + [mask_token] + e[start_index + span_length:]
-                ex_rest_len -= span_length - 1
-                masked_length += span_length
-            corrupt_examples.append(e)
-        # pad & batchfy input_ids
-        batch["input_ids"] = _torch_collate_batch(
-                corrupt_examples, tokenizer=self.tokenizer, pad_to_multiple_of=self.pad_to_multiple_of
-            )
+        batch = {"labels": _torch_collate_batch(examples, tokenizer=self.tokenizer, pad_to_multiple_of=None)}
+        batch["labels"] = torch.where(batch["labels"] == self.tokenizer.pad_token_id, -100, batch["labels"])
+        batch["decoder_input_ids"] = shift_tokens_right(
+            batch["labels"], self.tokenizer.pad_token_id, self.tokenizer.eos_token_id
+        )
+        batch["decoder_attention_mask"] = torch.where(
+            batch["decoder_input_ids"] == self.tokenizer.pad_token_id, 0, torch.ones_like(batch["decoder_input_ids"])
+        )
+        batch["input_ids"] = self._infilling(examples)
+        batch["attention_mask"] = torch.where(
+            batch["input_ids"] == self.tokenizer.pad_token_id, 0, torch.ones_like(batch["input_ids"])
+        )
         return batch
+
+    def _infilling(self, examples):
+        buffer = []
+        for example in examples:
+            source_tokens_ids = example
+            source_tokens_ids_length = example.size(0)
+            masking_length = int(source_tokens_ids_length * self.mlm_probability)
+            masked_length = 0
+
+            while masked_length < masking_length:
+                span_length = int(min(self.poisson_dist.sample().item(), source_tokens_ids_length - 1))
+                start_index = torch.randint(0, source_tokens_ids_length - span_length, (1,)).item()
+                source_tokens_ids = torch.concat(
+                    [
+                        source_tokens_ids[:start_index],
+                        torch.tensor([self.tokenizer.mask_token_id]),
+                        source_tokens_ids[start_index + span_length :],
+                    ]
+                )
+                source_tokens_ids_length -= span_length - 1
+                masked_length += span_length
+            buffer.append(source_tokens_ids)
+        return pad_sequence(buffer, batch_first=True, padding_value=self.tokenizer.pad_token_id)
+
 
 class DataCollatorForT5:
     """
