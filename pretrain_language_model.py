@@ -3,7 +3,6 @@ import os
 from argparse import ArgumentParser
 import torch
 
-from datasets import Dataset
 from omegaconf import OmegaConf
 from transformers import (
     CONFIG_MAPPING,
@@ -15,6 +14,8 @@ from transformers import (
     set_seed,
 )
 from transformers.trainer_utils import get_last_checkpoint
+from datasets import Dataset
+from lassl import MODEL_TYPE_TO_COLLATOR, TokenizerSaveCallback
 
 from lassl.collators import (
     DataCollatorForAlbert,
@@ -54,6 +55,8 @@ def main():
     training_args = TrainingArguments(**nested_args.training)
 
     train_dataset = Dataset.load_from_disk(data_args.data_dir)
+    train_dataset.set_format("torch")
+
     eval_dataset = None
     tokenizer = AutoTokenizer.from_pretrained(data_args.data_dir)
 
@@ -65,7 +68,7 @@ def main():
     model = AutoModelForPreTraining.from_config(model_config)
     model.resize_token_embeddings(tokenizer.vocab_size)
 
-    data_collator = model_type_to_collator[model_args.model_type](tokenizer=tokenizer, **collator_args)
+    data_collator = MODEL_TYPE_TO_COLLATOR[model_args.model_type](tokenizer=tokenizer, **collator_args)
 
     if training_args.do_eval and data_args.test_size:
         train_dataset, eval_dataset = (
@@ -80,12 +83,13 @@ def main():
         )
 
     trainer = Trainer(
+        model=model,
         args=training_args,
+        data_collator=data_collator,
         train_dataset=train_dataset,
         eval_dataset=eval_dataset,
-        model=model,
         tokenizer=tokenizer,
-        data_collator=data_collator,
+        callbacks=[TokenizerSaveCallback()],
     )
 
     last_checkpoint = None
