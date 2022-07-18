@@ -7,14 +7,6 @@ from transformers import AutoTokenizer, HfArgumentParser
 from lassl import MODEL_TYPE_TO_PREDEFINED_MODEL
 from lassl.utils import batch_iterator, load_corpora
 
-model_type_to_predefined_model = {
-    "bert-cased": "bert-base-cased",
-    "gpt2": "gpt2",
-    "roberta": "roberta-base",
-    "albert": "albert-base-v2",
-    "bart": "facebook/bart-base",
-    "t5" : "t5-small"
-}
 
 
 @dataclass
@@ -37,7 +29,7 @@ class DataArguments:
         default=1000,
     )
     sampling_ratio: float = field(
-        default=0.1,
+        default=0.3,
     )
 
 
@@ -57,7 +49,7 @@ class ModelArguments:
         },
     )
     vocab_size: int = field(
-        default=30000,
+        default=50000,
     )
     min_frequency: int = field(
         default=2,
