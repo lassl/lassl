@@ -1,0 +1,51 @@
+model: # Edit model config referring to the follow link: https://huggingface.co/docs/transformers/master/en/model_doc/auto#transformers.AutoModelForPreTraining
+  model_type: "roberta"
+  vocab_size: 32000
+  bos_token_id: 0
+  eos_token_id: 2
+  pad_token_id: 1
+  hidden_act: "gelu"
+  hidden_size: 256
+  intermediate_size: 1024
+  max_position_embeddings: 512
+  num_attention_heads: 4
+  num_hidden_layers: 12
+  position_embedding_type: "absolute"
+  type_vocab_size: 1
+data:
+  data_dir: "datasets/roberta" # Fill in the path of a output of running serialize_corpora.py.
+  test_size: 0.0 # If you set this argument, arguments must be floating type. (e.g. 0.01)
+collator:
+  mlm_probability: 0.15
+  poisson_lambda: 3
+training: # Edit training config referring to the follow link: https://huggingface.co/docs/transformers/master/en/main_classes/trainer#transformers.TrainingArguments
+  output_dir: "checkpoints/roberta" # Fill in the path which is used to save checkpoints.
+  overwrite_output_dir: True # If you use multi-node, set this True.
+  do_train: True
+  do_eval: False
+  per_device_train_batch_size: 32
+  per_device_eval_batch_size: 32
+  gradient_accumulation_steps: 2
+  learning_rate: 1e-4
+  weight_decay: 0.1
+  adam_beta1: 0.9
+  adam_beta2: 0.999
+  adam_epsilon: 1e-08
+  max_grad_norm: 1.0
+  max_steps: 1000000
+  lr_scheduler_type: "linear"
+  warmup_steps: 10000
+  logging_strategy: "steps"
+  logging_steps: 10
+  evaluation_strategy: "no"
+  eval_steps: 0
+  save_strategy: "steps"
+  save_steps: 10000
+  save_total_limit: 5
+  seed: 42
+  fp16: True
+  sharded_ddp: False
+  deepspeed:
+  gradient_checkpointing: False
+  tpu_num_cores: 8  # leave blank if not training on TPU devices
+  report_to: "wandb" # "none" if monitoring not necessary
