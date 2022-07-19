@@ -46,7 +46,6 @@ def get_main_args():
 
 
 def main():
-    os.environ["CUDA_VISIBLE_DEVICES "]="0"
     args = get_main_args()
     nested_args = OmegaConf.load(args.config_path)
     model_args = nested_args.model

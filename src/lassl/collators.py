@@ -274,7 +274,8 @@ class DataCollatorForT5:
 
     def _noise_span_to_unique_sentinel(self, tokens, noise_mask, append_last_sentinel=False) -> torch.LongTensor:
         ''' pytorch-ported version of https://github.com/google-research/text-to-text-transfer-transformer/blob/bb545f19ec221e6203dd05505573fbc0c0a9001f/t5/data/preprocessors.py#L3074'''
-        tokens = torch.tensor(tokens)
+        if not isinstance(tokens, torch.Tensor):
+            tokens = torch.tensor(tokens)
         prev_token_is_noise = torch.cat((torch.tensor([0]), noise_mask[:-1]), dim=0).bool()
         first_noise_tokens = torch.logical_and(
             noise_mask, torch.logical_not(prev_token_is_noise))
@@ -305,4 +306,13 @@ class DataCollatorForT5:
                 targets, tokenizer=self.tokenizer, pad_to_multiple_of=None # labels' length are all sample by design
             )
         }
+        batch["decoder_input_ids"] = shift_tokens_right(
+            batch["labels"], self.tokenizer.pad_token_id, self.tokenizer.pad_token_id
+        )
+        batch["decoder_attention_mask"] = torch.where(
+            batch["decoder_input_ids"] == self.tokenizer.pad_token_id, 0, torch.ones_like(batch["decoder_input_ids"])
+        )
+        batch["attention_mask"] = torch.where(
+            batch["input_ids"] == self.tokenizer.pad_token_id, 0, torch.ones_like(batch["input_ids"])
+        )
         return batch
