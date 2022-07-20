@@ -40,7 +40,7 @@ training: # Edit training config referring to the follow link: https://huggingfa
   save_steps: 10000
   save_total_limit: 5
   seed: 42
-  fp16: True
+  fp16: False # mixed-precision (only with "cuda" device)
   sharded_ddp: False
   deepspeed:
   gradient_checkpointing: False
