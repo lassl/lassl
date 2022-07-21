@@ -2,6 +2,24 @@ from dataclasses import dataclass, field
 
 from transformers import HfArgumentParser
 
+from lassl.processors import (
+    AlbertProcessor,
+    BertProcessor,
+    GPT2Processor,
+    RobertaProcessor,
+    BartProcessor,
+    T5Processor
+)
+
+model_type_to_processor = {
+    "bert": BertProcessor,
+    "roberta": RobertaProcessor,
+    "gpt2": GPT2Processor,
+    "albert": AlbertProcessor,
+    "bart" : BartProcessor,
+    "t5" : T5Processor
+}
+
 from lassl import MODEL_TYPE_TO_PROCESSOR
 from lassl.utils import load_corpora
 
@@ -9,7 +27,7 @@ from lassl.utils import load_corpora
 @dataclass
 class Arguments:
     model_type: str = field(
-        default="roberta",
+        default="t5",
         metadata={
             "choices": [
                 "bert",
@@ -17,17 +35,21 @@ class Arguments:
                 "gpt2",
                 "albert",
                 "bart",
+                "t5"
             ]
         },
     )
     tokenizer_dir: str = field(
-        default="tokenizers/roberta",
+        default = "tokenizers/t5"
+        ### pretrained options
+        # default="KETI-AIR/ke-t5-small",
+        # default="hyunwoongko/kobart"
     )
     corpora_dir: str = field(
-        default="corpora/kowiki",
+        default="corpora",
     )
     corpus_type: str = field(
-        default="docu_json",
+        default="sent_text",
         metadata={
             "choices": [
                 "docu_text",
@@ -41,7 +63,7 @@ class Arguments:
         default=512,
     )
     num_proc: int = field(
-        default=4,
+        default=1,
     )
     batch_size: int = field(
         default=1000,

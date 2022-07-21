@@ -5,6 +5,7 @@ from lassl.collators import (
     DataCollatorForBert,
     DataCollatorForGpt2,
     DataCollatorForRoberta,
+    DataCollatorForT5
 )
 from lassl.processors import (
     AlbertProcessor,
@@ -12,6 +13,7 @@ from lassl.processors import (
     BertProcessor,
     GPT2Processor,
     RobertaProcessor,
+    T5Processor
 )
 
 # in train_tokenizer.py
@@ -21,6 +23,7 @@ MODEL_TYPE_TO_PREDEFINED_MODEL = {
     "roberta": "roberta-base",
     "albert": "albert-base-v2",
     "bart": "facebook/bart-base",
+    "t5" : "t5-small"
 }
 
 # in serialize_corpora.py
@@ -30,6 +33,7 @@ MODEL_TYPE_TO_PROCESSOR = {
     "gpt2": GPT2Processor,
     "albert": AlbertProcessor,
     "bart": BartProcessor,
+    "t5" : T5Processor
 }
 
 # in pretrain_language_model.py
@@ -39,4 +43,5 @@ MODEL_TYPE_TO_COLLATOR = {
     "roberta": DataCollatorForRoberta,
     "gpt2": DataCollatorForGpt2,
     "bart": DataCollatorForBart,
+    "t5" : DataCollatorForT5
 }

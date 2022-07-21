@@ -8,13 +8,14 @@ from lassl import MODEL_TYPE_TO_PREDEFINED_MODEL
 from lassl.utils import batch_iterator, load_corpora
 
 
+
 @dataclass
 class DataArguments:
     corpora_dir: str = field(
-        default="corpora/kowiki",
+        default="corpora",
     )
     corpus_type: str = field(
-        default="docu_json",
+        default="sent_text",
         metadata={
             "choices": [
                 "docu_text",
@@ -28,18 +29,27 @@ class DataArguments:
         default=1000,
     )
     sampling_ratio: float = field(
-        default=0.1,
+        default=0.3,
     )
 
 
 @dataclass
 class ModelArguments:
     model_type: str = field(
-        default="bart",
-        metadata={"choices": ["bert-cased", "gpt2", "roberta", "albert", "bart"]},
+        default="t5",
+        metadata={
+            "choices": [
+                "bert-cased",
+                "gpt2",
+                "roberta",
+                "albert",
+                "bart",
+                "t5"
+            ]
+        },
     )
     vocab_size: int = field(
-        default=30000,
+        default=50000,
     )
     min_frequency: int = field(
         default=2,
