@@ -18,6 +18,29 @@ def tolist(x):
     return x.tolist()
 
 
+def pad_for_token_type_ids(examples: Any, tokenizer: PreTrainedTokenizerBase, pad_to_multiple_of = 8) -> torch.Tensor:
+    """
+    Create "token_type_ids" for Bert-like models
+    used when token_a & token_b already in the same chunk separated by [SEP] token 
+    (for those not in the same chunk, use "tokenizer.create_token_type_ids_from_sequences(token_a, token_b)")
+    """
+    if isinstance(examples, torch.Tensor):
+        examples = examples.tolist()
+    if max([len(example) for example in examples]) % pad_to_multiple_of == 0:
+        max_seq_len = max([len(example) for example in examples])
+    else:
+        max_seq_len = pad_to_multiple_of + (max([len(example) for example in examples])//pad_to_multiple_of)*pad_to_multiple_of
+    token_type_ids_with_padding = []
+    for example in examples:
+        for idx in range(len(example)):
+            if example[idx] == tokenizer.sep_token_id and idx != len(example) - 1:
+                token_type_ids_with_padding.append([0]*(idx+1) + [1]*(max_seq_len-idx-1))
+                break
+            if idx == len(example) - 1:
+                token_type_ids_with_padding.append([0 for _ in range(max_seq_len)])
+    return torch.tensor(token_type_ids_with_padding).long()
+
+
 class DataCollatorForBert(DataCollatorForWholeWordMask):
     """
     Processing training examples to mini-batch for Bert (mlm+wwm+sop).
@@ -316,3 +339,67 @@ class DataCollatorForT5:
             batch["input_ids"] == self.tokenizer.pad_token_id, 0, torch.ones_like(batch["input_ids"])
         )
         return batch
+
+
+class DataCollatorForElectra(DataCollatorForWholeWordMask):
+    """
+    Processing training examples to mini-batch for Electra (fake input discrimination).
+    """
+    def __init__(
+        self,
+        tokenizer: PreTrainedTokenizerBase,
+        mlm_probability: float = 0.15,
+        pad_to_multiple_of: int = 8
+    ):
+        self.tokenizer = tokenizer
+        self.mlm_probability = mlm_probability
+        self.pad_to_multiple_of = pad_to_multiple_of
+        
+    def __call__(self, examples: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+        examples = [example["input_ids"].tolist() if isinstance(example["input_ids"], torch.Tensor) else example["input_ids"] for example in examples]
+        fake_inputs_with_labels = self._generate_fake_inputs(examples)
+        batch = {
+            "input_ids": _torch_collate_batch(
+            fake_inputs_with_labels["input_ids"], self.tokenizer, pad_to_multiple_of=self.pad_to_multiple_of
+            ),
+            "labels": _torch_collate_batch(
+            fake_inputs_with_labels["labels"], self.tokenizer, pad_to_multiple_of=self.pad_to_multiple_of
+            )
+        }
+        batch["attention_mask"] = torch.ones(batch["input_ids"].size()) - (batch["input_ids"] == self.tokenizer.pad_token_id).long()
+        batch["token_type_ids"] = pad_for_token_type_ids(
+            fake_inputs_with_labels["input_ids"], self.tokenizer, pad_to_multiple_of=self.pad_to_multiple_of
+            )
+        return batch
+        
+
+    def _generate_fake_inputs(self, examples: List[List[int]]) -> Dict[str, Any]:
+        input_ids = [self.tokenizer.prepare_for_model(example, padding=False)["input_ids"] for example in examples]
+        torch_masked_boolean: torch.Tensor = super().__call__(input_ids)["input_ids"]
+        masked_boolean = (torch_masked_boolean == self.tokenizer.mask_token_id).tolist()
+        labels = [masked for masked in torch.eq(torch_masked_boolean, self.tokenizer.mask_token_id).long().tolist()]
+        
+        def _fake_input_id(original_id):
+            forbidden_ids = self.tokenizer.all_special_ids + [original_id]
+            fake_id = random.randint(0, self.tokenizer.vocab_size - 1)
+            while fake_id in forbidden_ids:
+                fake_id = random.randint(0, self.tokenizer.vocab_size - 1)
+            return fake_id
+        
+        generated_input_ids_seqs = []
+        for idx in range(len(masked_boolean)):
+            fake_input_ids = []
+            curr_masked, curr_ids = masked_boolean[idx], input_ids[idx]
+            while curr_ids and curr_masked:
+                mask, ids = curr_masked.pop(0), curr_ids.pop(0)
+                if mask is True:
+                    fake_input_ids.append(_fake_input_id(ids))
+                else:
+                    fake_input_ids.append(ids)
+                    
+            generated_input_ids_seqs.append(fake_input_ids)
+            
+        return {
+            "input_ids": generated_input_ids_seqs,
+            "labels": labels
+        }
