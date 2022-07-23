@@ -44,7 +44,8 @@ class ModelArguments:
                 "roberta",
                 "albert",
                 "bart",
-                "t5"
+                "t5",
+                "electra"
             ]
         },
     )
