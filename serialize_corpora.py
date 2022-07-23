@@ -8,7 +8,8 @@ from lassl.processors import (
     GPT2Processor,
     RobertaProcessor,
     BartProcessor,
-    T5Processor
+    T5Processor,
+    ElectraProcessor
 )
 
 model_type_to_processor = {
@@ -17,7 +18,8 @@ model_type_to_processor = {
     "gpt2": GPT2Processor,
     "albert": AlbertProcessor,
     "bart" : BartProcessor,
-    "t5" : T5Processor
+    "t5" : T5Processor,
+    "electra": ElectraProcessor
 }
 
 from lassl import MODEL_TYPE_TO_PROCESSOR
