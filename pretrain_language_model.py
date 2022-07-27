@@ -23,7 +23,8 @@ from lassl.collators import (
     DataCollatorForGpt2,
     DataCollatorForRoberta,
     DataCollatorForBart,
-    DataCollatorForT5
+    DataCollatorForT5,
+    DataCollatorForElectra
 )
 
 model_type_to_collator = {
@@ -32,7 +33,8 @@ model_type_to_collator = {
     "roberta": DataCollatorForRoberta,
     "gpt2": DataCollatorForGpt2,
     "bart" : DataCollatorForBart,
-    "t5" : DataCollatorForT5
+    "t5" : DataCollatorForT5,
+    "electra": DataCollatorForElectra
 }
 
 logger = logging.getLogger(__name__)
