@@ -18,7 +18,7 @@ def tolist(x):
     return x.tolist()
 
 
-def pad_for_token_type_ids(examples: Any, tokenizer: PreTrainedTokenizerBase, pad_to_multiple_of = 8) -> torch.Tensor:
+def _token_type_ids_with_pad(examples: Any, tokenizer: PreTrainedTokenizerBase, pad_to_multiple_of: int = 8) -> torch.Tensor:
     """
     Create "token_type_ids" for Bert-like models
     used when token_a & token_b already in the same chunk separated by [SEP] token 
@@ -344,6 +344,7 @@ class DataCollatorForT5:
 class DataCollatorForElectra(DataCollatorForWholeWordMask):
     """
     Processing training examples to mini-batch for Electra (fake input discrimination).
+    Modified implementation: discriminator only version
     """
     def __init__(
         self,
@@ -357,49 +358,22 @@ class DataCollatorForElectra(DataCollatorForWholeWordMask):
         
     def __call__(self, examples: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
         examples = [example["input_ids"].tolist() if isinstance(example["input_ids"], torch.Tensor) else example["input_ids"] for example in examples]
-        fake_inputs_with_labels = self._generate_fake_inputs(examples)
-        batch = {
-            "input_ids": _torch_collate_batch(
-            fake_inputs_with_labels["input_ids"], self.tokenizer, pad_to_multiple_of=self.pad_to_multiple_of
-            ),
-            "labels": _torch_collate_batch(
-            fake_inputs_with_labels["labels"], self.tokenizer, pad_to_multiple_of=self.pad_to_multiple_of
-            )
-        }
-        batch["attention_mask"] = torch.ones(batch["input_ids"].size()) - (batch["input_ids"] == self.tokenizer.pad_token_id).long()
-        batch["token_type_ids"] = pad_for_token_type_ids(
-            fake_inputs_with_labels["input_ids"], self.tokenizer, pad_to_multiple_of=self.pad_to_multiple_of
+        batch = self._generate_fake_inputs(examples)
+        batch["attention_mask"] = (batch["input_ids"] != self.tokenizer.pad_token_id).long()
+        batch["token_type_ids"] = _token_type_ids_with_pad(
+            batch["input_ids"], self.tokenizer, pad_to_multiple_of=self.pad_to_multiple_of
             )
         return batch
         
-
     def _generate_fake_inputs(self, examples: List[List[int]]) -> Dict[str, Any]:
         input_ids = [self.tokenizer.prepare_for_model(example, padding=False)["input_ids"] for example in examples]
-        torch_masked_boolean: torch.Tensor = super().__call__(input_ids)["input_ids"]
-        masked_boolean = (torch_masked_boolean == self.tokenizer.mask_token_id).tolist()
-        labels = [masked for masked in torch.eq(torch_masked_boolean, self.tokenizer.mask_token_id).long().tolist()]
-        
-        def _fake_input_id(original_id):
-            forbidden_ids = self.tokenizer.all_special_ids + [original_id]
-            fake_id = random.randint(0, self.tokenizer.vocab_size - 1)
-            while fake_id in forbidden_ids:
-                fake_id = random.randint(0, self.tokenizer.vocab_size - 1)
-            return fake_id
-        
-        generated_input_ids_seqs = []
-        for idx in range(len(masked_boolean)):
-            fake_input_ids = []
-            curr_masked, curr_ids = masked_boolean[idx], input_ids[idx]
-            while curr_ids and curr_masked:
-                mask, ids = curr_masked.pop(0), curr_ids.pop(0)
-                if mask is True:
-                    fake_input_ids.append(_fake_input_id(ids))
-                else:
-                    fake_input_ids.append(ids)
-                    
-            generated_input_ids_seqs.append(fake_input_ids)
-            
+        original_input_ids = _torch_collate_batch(input_ids, self.tokenizer, pad_to_multiple_of=self.pad_to_multiple_of)
+        torch_masked_boolean: torch.Tensor = super().__call__(input_ids)["input_ids"] == self.tokenizer.mask_token_id
+        whole_random_ids = torch.randint(0, self.tokenizer.vocab_size-1, torch_masked_boolean.size())
+        fake_generated_ids = torch.where(torch_masked_boolean, whole_random_ids, original_input_ids)
+        labels = (original_input_ids != fake_generated_ids).long()
         return {
-            "input_ids": generated_input_ids_seqs,
-            "labels": labels
+            "input_ids": fake_generated_ids,
+            "labels": labels,
+            "original_input_ids": original_input_ids
         }
