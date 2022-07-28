@@ -136,6 +136,7 @@ class GPT2Processor(BaseProcessor):
 
         return dict_of_training_examples
 
+
 class AlbertProcessor(BaseProcessor):
     def __init__(self, model_name_or_path: str, max_length: int) -> None:
         super().__init__(model_name_or_path=model_name_or_path, max_length=max_length)
@@ -194,43 +195,40 @@ class BartProcessor(BaseProcessor):
 
         return dict_of_training_examples
 
+
 class T5Processor(BaseProcessor):
-    def __init__(self, model_name_or_path: str, max_length: int, noise_density : float = 0.15, mean_span_length : float = 3.0) -> None:
+    def __init__(
+        self, model_name_or_path: str, max_length: int, noise_density: float = 0.15, mean_span_length: float = 3.0
+    ) -> None:
         super().__init__(model_name_or_path=model_name_or_path, max_length=max_length)
-        self.noise_density = noise_density 
+        self.noise_density = noise_density
         self.mean_span_length = mean_span_length
         self.max_length = max_length
         self._chunk_size = self._compute_chunk_size()[0]
 
-    def _compute_chunk_size(self) -> Tuple[int,int]:
-        '''
-            compute pre-noise length that is mapped to max_length (= input_size)
-            target size is usually shorter than input size (when noise_density < 0.5)
-            so we compute pre-noise length that makes input size to be max_length
-        '''
+    def _compute_chunk_size(self) -> Tuple[int, int]:
+        """
+        compute pre-noise length that is mapped to max_length (= input_size)
+        target size is usually shorter than input size (when noise_density < 0.5)
+        so we compute pre-noise length that makes input size to be max_length
+        """
+
         def _tokens_length_to_inputs_length_targets_length(tokens_length):
-            '''
-                https://github.com/google-research/text-to-text-transfer-transformer/blob/c3be7cf1c20e5f6d83e6de99377b653a3a0bc44a/t5/data/preprocessors.py#L2648 
-            '''
+            """
+            https://github.com/google-research/text-to-text-transfer-transformer/blob/c3be7cf1c20e5f6d83e6de99377b653a3a0bc44a/t5/data/preprocessors.py#L2648
+            """
             num_noise_tokens = int(round(tokens_length * self.noise_density))
             num_nonnoise_tokens = tokens_length - num_noise_tokens
             num_noise_spans = int(round(num_noise_tokens / self.mean_span_length))
             # inputs contain all nonnoise tokens, sentinels for all noise spans
             # and one EOS token.
-            return (
-                num_nonnoise_tokens +
-                num_noise_spans + 1,
-                num_noise_tokens +
-                num_noise_spans + 1)
-        
-        tokens_length = self.max_length - 1
-        while (_tokens_length_to_inputs_length_targets_length(tokens_length + 1)[0]
-                <= self.max_length):
-            tokens_length += 1
-        inputs_length, targets_length = (
-            _tokens_length_to_inputs_length_targets_length(tokens_length))
-        return tokens_length, targets_length
+            return (num_nonnoise_tokens + num_noise_spans + 1, num_noise_tokens + num_noise_spans + 1)
 
+        tokens_length = self.max_length - 1
+        while _tokens_length_to_inputs_length_targets_length(tokens_length + 1)[0] <= self.max_length:
+            tokens_length += 1
+        inputs_length, targets_length = _tokens_length_to_inputs_length_targets_length(tokens_length)
+        return tokens_length, targets_length
 
     def __call__(self, list_of_str: List[str]) -> Dict[str, List[int]]:
         dict_of_training_examples: Dict[str, List[int]] = {"input_ids": []}
@@ -250,15 +248,15 @@ class T5Processor(BaseProcessor):
             self._buffer.extend(input_ids)
 
             while len(self._buffer) >= self._chunk_size:
-                # slice upto chunk_size - 1 since chunk_size contains eos token already 
+                # slice upto chunk_size - 1 since chunk_size contains eos token already
                 # and add eos token at the end of sequence
-                chunk_ids = self._buffer[: self._chunk_size] 
+                chunk_ids = self._buffer[: self._chunk_size]
                 dict_of_training_examples["input_ids"].append(chunk_ids)
-                self._buffer = self._buffer[self._chunk_size:]
+                self._buffer = self._buffer[self._chunk_size :]
 
         return dict_of_training_examples
-    
-    
+
+
 class ElectraProcessor(BaseProcessor):
     def __init__(self, model_name_or_path: str, max_length: int) -> None:
         super().__init__(model_name_or_path=model_name_or_path, max_length=max_length)

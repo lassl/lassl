@@ -1,41 +1,21 @@
 import logging
 import os
 from argparse import ArgumentParser
-import torch
 
+import torch
+from datasets import Dataset
 from omegaconf import OmegaConf
 from transformers import (
     CONFIG_MAPPING,
     AutoModelForPreTraining,
     AutoTokenizer,
-    DataCollator,
     Trainer,
     TrainingArguments,
     set_seed,
 )
 from transformers.trainer_utils import get_last_checkpoint
-from datasets import Dataset
+
 from lassl import MODEL_TYPE_TO_COLLATOR, TokenizerSaveCallback
-
-from lassl.collators import (
-    DataCollatorForAlbert,
-    DataCollatorForBert,
-    DataCollatorForGpt2,
-    DataCollatorForRoberta,
-    DataCollatorForBart,
-    DataCollatorForT5,
-    DataCollatorForElectra
-)
-
-model_type_to_collator = {
-    "bert": DataCollatorForBert,
-    "albert": DataCollatorForAlbert,
-    "roberta": DataCollatorForRoberta,
-    "gpt2": DataCollatorForGpt2,
-    "bart" : DataCollatorForBart,
-    "t5" : DataCollatorForT5,
-    "electra": DataCollatorForElectra
-}
 
 logger = logging.getLogger(__name__)
 

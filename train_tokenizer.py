@@ -8,7 +8,6 @@ from lassl import MODEL_TYPE_TO_PREDEFINED_MODEL
 from lassl.utils import batch_iterator, load_corpora
 
 
-
 @dataclass
 class DataArguments:
     corpora_dir: str = field(
@@ -37,17 +36,7 @@ class DataArguments:
 class ModelArguments:
     model_type: str = field(
         default="t5",
-        metadata={
-            "choices": [
-                "bert-cased",
-                "gpt2",
-                "roberta",
-                "albert",
-                "bart",
-                "t5",
-                "electra"
-            ]
-        },
+        metadata={"choices": ["bert", "gpt2", "roberta", "albert", "bart", "t5", "electra"]},
     )
     vocab_size: int = field(
         default=50000,

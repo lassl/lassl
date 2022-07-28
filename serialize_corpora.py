@@ -2,26 +2,6 @@ from dataclasses import dataclass, field
 
 from transformers import HfArgumentParser
 
-from lassl.processors import (
-    AlbertProcessor,
-    BertProcessor,
-    GPT2Processor,
-    RobertaProcessor,
-    BartProcessor,
-    T5Processor,
-    ElectraProcessor
-)
-
-model_type_to_processor = {
-    "bert": BertProcessor,
-    "roberta": RobertaProcessor,
-    "gpt2": GPT2Processor,
-    "albert": AlbertProcessor,
-    "bart" : BartProcessor,
-    "t5" : T5Processor,
-    "electra": ElectraProcessor
-}
-
 from lassl import MODEL_TYPE_TO_PROCESSOR
 from lassl.utils import load_corpora
 
@@ -30,23 +10,9 @@ from lassl.utils import load_corpora
 class Arguments:
     model_type: str = field(
         default="t5",
-        metadata={
-            "choices": [
-                "bert",
-                "roberta",
-                "gpt2",
-                "albert",
-                "bart",
-                "t5"
-            ]
-        },
+        metadata={"choices": ["bert", "roberta", "gpt2", "albert", "bart", "t5"]},
     )
-    tokenizer_dir: str = field(
-        default = "tokenizers/t5"
-        ### pretrained options
-        # default="KETI-AIR/ke-t5-small",
-        # default="hyunwoongko/kobart"
-    )
+    tokenizer_dir: str = field(default="tokenizers/t5")
     corpora_dir: str = field(
         default="corpora",
     )
