@@ -12,7 +12,8 @@ class Arguments:
         default="t5",
         metadata={"choices": ["bert", "roberta", "gpt2", "albert", "bart", "t5"]},
     )
-    tokenizer_dir: str = field(default="tokenizers/t5")
+    tokenizer_dirpath: str = field(default="tokenizers/bert")
+    output_base_dirpath: str = field(default="datasets")
     corpora_dir: str = field(
         default="corpora",
     )
@@ -50,7 +51,7 @@ class Arguments:
 def main():
     parser = HfArgumentParser(Arguments)
     args = parser.parse_args_into_dataclasses()[0]
-    data_processor = MODEL_TYPE_TO_PROCESSOR[args.model_type](args.tokenizer_dir, args.max_length)
+    data_processor = MODEL_TYPE_TO_PROCESSOR[args.model_type](args.tokenizer_dirpath, args.max_length)
 
     corpora = load_corpora(args.corpora_dir, corpus_type=args.corpus_type)
 
@@ -65,8 +66,8 @@ def main():
         remove_columns=corpora.column_names,
     )
 
-    dataset.save_to_disk("datasets/" + args.model_type)
-    data_processor.save_tokenizer("datasets/" + args.model_type)
+    dataset.save_to_disk(f"{args.output_base_dirpath}/{args.model_type}")
+    data_processor.save_tokenizer(f"{args.output_base_dirpath}/{args.model_type}")
 
 
 if __name__ == "__main__":
