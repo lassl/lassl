@@ -14,7 +14,7 @@ class Arguments:
     )
     tokenizer_dirpath: str = field(default="tokenizers/bert")
     output_base_dirpath: str = field(default="datasets")
-    corpora_dir: str = field(
+    corpora_dirpath: str = field(
         default="corpora",
     )
     corpus_type: str = field(
@@ -53,7 +53,7 @@ def main():
     args = parser.parse_args_into_dataclasses()[0]
     data_processor = MODEL_TYPE_TO_PROCESSOR[args.model_type](args.tokenizer_dirpath, args.max_length)
 
-    corpora = load_corpora(args.corpora_dir, corpus_type=args.corpus_type)
+    corpora = load_corpora(args.corpora_dirpath, corpus_type=args.corpus_type)
 
     dataset = corpora.map(
         lambda examples: data_processor(examples["text"]),
