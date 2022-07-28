@@ -10,7 +10,7 @@ from lassl.utils import batch_iterator, load_corpora
 
 @dataclass
 class DataArguments:
-    corpora_dir: str = field(
+    corpora_dirpath: str = field(
         default="corpora",
     )
     corpus_type: str = field(
@@ -30,6 +30,7 @@ class DataArguments:
     sampling_ratio: float = field(
         default=0.3,
     )
+    output_base_dirpath: str = field(default="tokenizers")
 
 
 @dataclass
@@ -52,7 +53,7 @@ class ModelArguments:
 def main():
     parser = HfArgumentParser((DataArguments, ModelArguments))
     data_args, model_args = parser.parse_args_into_dataclasses()
-    corpora = load_corpora(data_args.corpora_dir, data_args.corpus_type)
+    corpora = load_corpora(data_args.corpora_dirpath, data_args.corpus_type)
 
     assert data_args.sampling_ratio > 0, "sampling_ratio must be greater than 0."
 
@@ -86,7 +87,7 @@ def main():
             vocab_size=model_args.vocab_size,
             min_frequency=model_args.min_frequency,
         )
-    tokenizer.save_pretrained("tokenizers/" + model_args.model_type)
+    tokenizer.save_pretrained(f"{data_args.output_base_dirpath}/{model_args.model_type}")
 
 
 if __name__ == "__main__":

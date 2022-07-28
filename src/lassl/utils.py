@@ -16,8 +16,8 @@ def batch_iterator(
         yield dataset[i : i + batch_size][key]
 
 
-def load_corpora(dir_path, corpus_type="docu_json"):
-    corpora_dir = Path(dir_path).absolute()
+def load_corpora(dirpath, corpus_type="docu_json"):
+    corpora_dir = Path(dirpath).absolute()
     extension = corpus_type.split("_")[-1]
 
     if extension == "json":
