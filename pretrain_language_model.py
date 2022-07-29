@@ -13,8 +13,8 @@ from transformers import (
     set_seed,
 )
 from transformers.trainer_utils import get_last_checkpoint
-
 from lassl import MODEL_TYPE_TO_COLLATOR, TokenizerSaveCallback
+
 
 logger = logging.getLogger(__name__)
 

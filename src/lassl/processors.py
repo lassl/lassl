@@ -295,3 +295,33 @@ class ElectraProcessor(BaseProcessor):
                 self._buffer = self._buffer[self._chunk_size :]
 
         return dict_of_training_examples
+    
+    
+class ElectraProcessor(BaseProcessor):
+    def __init__(self, model_name_or_path: str, max_length: int) -> None:
+        super().__init__(model_name_or_path=model_name_or_path, max_length=max_length)
+        self._chunk_size = max_length - 2
+
+    def __call__(self, list_of_str: List[str]) -> Dict[str, List[int]]:
+        dict_of_training_examples: Dict[str, List[int]] = {"input_ids": []}
+
+        list_of_input_ids: List[List[int]] = self._tokenizer(
+            list_of_str,
+            padding=False,
+            truncation=False,
+            add_special_tokens=False,
+            return_attention_mask=False,
+            return_special_tokens_mask=False,
+            verbose=False,
+        )["input_ids"]
+
+        for input_ids in list_of_input_ids:
+            input_ids += [self._tokenizer.sep_token_id]
+            self._buffer.extend(input_ids)
+
+            while len(self._buffer) >= self._chunk_size:
+                chunk_ids = self._buffer[: self._chunk_size]
+                dict_of_training_examples["input_ids"].append(chunk_ids)
+                self._buffer = self._buffer[self._chunk_size :]
+
+        return dict_of_training_examples

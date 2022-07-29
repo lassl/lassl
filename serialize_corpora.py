@@ -1,7 +1,6 @@
 from dataclasses import dataclass, field
 
 from transformers import HfArgumentParser
-
 from lassl import MODEL_TYPE_TO_PROCESSOR
 from lassl.utils import load_corpora
 
