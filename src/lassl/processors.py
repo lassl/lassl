@@ -29,8 +29,10 @@ class BertProcessor(BaseProcessor):
 
         list_of_input_ids: List[List[int]] = self._tokenizer(
             list_of_str,
+            add_special_tokens=False,
             padding=False,
             truncation=False,
+            return_token_type_ids=False,
             return_attention_mask=False,
             return_special_tokens_mask=False,
             verbose=False,
@@ -58,9 +60,10 @@ class RobertaProcessor(BaseProcessor):
 
         list_of_input_ids: List[List[int]] = self._tokenizer(
             list_of_str,
-            padding=False,
             add_special_tokens=False,
+            padding=False,
             truncation=False,
+            return_token_type_ids=False,
             return_attention_mask=False,
             return_special_tokens_mask=False,
             verbose=False,
@@ -74,11 +77,11 @@ class RobertaProcessor(BaseProcessor):
                 chunk_ids = self._buffer[: self._chunk_size]
                 training_example = self._tokenizer.prepare_for_model(
                     chunk_ids,
+                    add_special_tokens=True,
                     padding=False,
                     truncation=False,
-                    return_attention_mask=False,
                     return_token_type_ids=False,
-                    add_special_tokens=True,
+                    return_attention_mask=False,
                 )
 
                 training_example["special_tokens_mask"] = self._tokenizer.get_special_tokens_mask(
@@ -105,8 +108,10 @@ class GPT2Processor(BaseProcessor):
 
         list_of_input_ids: List[List[int]] = self._tokenizer(
             list_of_str,
+            add_special_tokens=False,
             padding=False,
             truncation=False,
+            return_token_type_ids=False,
             return_attention_mask=False,
             return_special_tokens_mask=False,
             verbose=False,
@@ -120,11 +125,11 @@ class GPT2Processor(BaseProcessor):
                 chunk_ids = self._buffer[: self._chunk_size]
                 training_example = self._tokenizer.prepare_for_model(
                     chunk_ids,
+                    add_special_tokens=False,
                     padding=False,
                     truncation=False,
                     return_attention_mask=False,
                     return_token_type_ids=False,
-                    add_special_tokens=False,
                 )
 
                 for key in training_example.keys():
@@ -147,8 +152,10 @@ class AlbertProcessor(BaseProcessor):
 
         list_of_input_ids: List[List[int]] = self._tokenizer(
             list_of_str,
+            add_special_tokens=False,
             padding=False,
             truncation=False,
+            return_token_type_ids=False,
             return_attention_mask=False,
             return_special_tokens_mask=False,
             verbose=False,
@@ -176,11 +183,12 @@ class BartProcessor(BaseProcessor):
 
         list_of_input_ids: List[List[int]] = self._tokenizer(
             list_of_str,
+            add_special_tokens=False,
             padding=False,
             truncation=False,
+            return_token_type_ids=False,
             return_attention_mask=False,
             return_special_tokens_mask=False,
-            add_special_tokens=False,
             verbose=False,
         )["input_ids"]
 
@@ -235,11 +243,12 @@ class T5Processor(BaseProcessor):
 
         list_of_input_ids: List[List[int]] = self._tokenizer(
             list_of_str,
+            add_special_tokens=False,
             padding=False,
             truncation=False,
+            return_token_type_ids=False,
             return_attention_mask=False,
             return_special_tokens_mask=False,
-            add_special_tokens=False,
             verbose=False,
         )["input_ids"]
 
@@ -267,9 +276,10 @@ class ElectraProcessor(BaseProcessor):
 
         list_of_input_ids: List[List[int]] = self._tokenizer(
             list_of_str,
+            add_special_tokens=False,
             padding=False,
             truncation=False,
-            add_special_tokens=False,
+            return_token_type_ids=False,
             return_attention_mask=False,
             return_special_tokens_mask=False,
             verbose=False,
