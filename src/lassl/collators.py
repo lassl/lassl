@@ -1,6 +1,5 @@
 import random
 from typing import Any, Dict, List, Optional
-import torch
 
 import torch
 from torch.nn.utils.rnn import pad_sequence
@@ -198,6 +197,7 @@ class DataCollatorForBart:
     """
     Processing training examples to mini-batch for Bart (text-infilling)
     """
+
     def __init__(
         self,
         tokenizer: PreTrainedTokenizerBase,
@@ -230,24 +230,22 @@ class DataCollatorForBart:
         buffer = []
         for example in examples:
             source_tokens_ids = example
-            source_tokens_ids_length = example.size(0)
+            source_tokens_ids_length = len(example)
             masking_length = int(source_tokens_ids_length * self.mlm_probability)
             masked_length = 0
 
             while masked_length < masking_length:
                 span_length = int(min(self.poisson_dist.sample().item(), source_tokens_ids_length - 1))
                 start_index = torch.randint(0, source_tokens_ids_length - span_length, (1,)).item()
-                source_tokens_ids = torch.concat(
-                    [
-                        source_tokens_ids[:start_index],
-                        torch.tensor([self.tokenizer.mask_token_id]),
-                        source_tokens_ids[start_index + span_length :],
-                    ]
+                source_tokens_ids = (
+                    source_tokens_ids[:start_index]
+                    + [self.tokenizer.mask_token_id]
+                    + source_tokens_ids[start_index + span_length :]
                 )
                 source_tokens_ids_length -= span_length - 1
                 masked_length += span_length
             buffer.append(source_tokens_ids)
-        return pad_sequence(buffer, batch_first=True, padding_value=self.tokenizer.pad_token_id)
+        return _torch_collate_batch(buffer, tokenizer=self.tokenizer, pad_to_multiple_of=self.pad_to_multiple_of)
 
 
 class DataCollatorForT5:
@@ -259,33 +257,35 @@ class DataCollatorForT5:
         self,
         tokenizer: PreTrainedTokenizerBase,
         pad_to_multiple_of: int = 8,
-        noise_density : float = 0.15,
-        mean_span_length : float = 3.0,
+        noise_density: float = 0.15,
+        mean_span_length: float = 3.0,
     ):
         self.tokenizer = tokenizer
         self.pad_to_multiple_of = pad_to_multiple_of
         self.noise_density = noise_density
         self.mean_span_length = mean_span_length
 
-    def _random_spans_noise_mask(self, length : int) -> torch.BoolTensor:
-        ''' pytorch-ported version of https://github.com/google-research/text-to-text-transfer-transformer/blob/bb545f19ec221e6203dd05505573fbc0c0a9001f/t5/data/preprocessors.py#L2901'''
+    def _random_spans_noise_mask(self, length: int) -> torch.BoolTensor:
+        """pytorch-ported version of https://github.com/google-research/text-to-text-transfer-transformer/blob/bb545f19ec221e6203dd05505573fbc0c0a9001f/t5/data/preprocessors.py#L2901"""
         orig_len = length
-        length = max(length, 2) # set minumum to 2 to avoid degeneracy
+        length = max(length, 2)  # set minumum to 2 to avoid degeneracy
         num_noise_tokens = round(self.noise_density * length)
-        num_noise_tokens = min(max(num_noise_tokens, 1), length-1) # set maximum to length-1 
+        num_noise_tokens = min(max(num_noise_tokens, 1), length - 1)  # set maximum to length-1
         num_noise_spans = round(num_noise_tokens / self.mean_span_length)
-        num_noise_spans = max(num_noise_spans, 1) # set minumum to 1
+        num_noise_spans = max(num_noise_spans, 1)  # set minumum to 1
         num_nonnoise_tokens = length - num_noise_tokens
 
         def _random_segmentation(num_items, num_segments):
             # affected by global seed
-            bars = torch.arange(num_items-1) < num_segments-1
+            bars = torch.arange(num_items - 1) < num_segments - 1
             bars = bars[torch.randperm(bars.size(0))]
-            bars = torch.cat((torch.tensor([0]), bars), dim=0) # to make segment 0 nonzero
+            bars = torch.cat((torch.tensor([0]), bars), dim=0)  # to make segment 0 nonzero
             segment_id = torch.cumsum(bars, dim=0)
-            segment_length = torch.zeros(num_segments, dtype=torch.long).scatter_add(0, segment_id, torch.ones_like(segment_id))
-            return segment_length 
-        
+            segment_length = torch.zeros(num_segments, dtype=torch.long).scatter_add(
+                0, segment_id, torch.ones_like(segment_id)
+            )
+            return segment_length
+
         noise_span_lengths = _random_segmentation(num_noise_tokens, num_noise_spans)
         nonnoise_span_lengths = _random_segmentation(num_nonnoise_tokens, num_noise_spans)
         interleaved_span_lengths = torch.stack((nonnoise_span_lengths, noise_span_lengths), dim=1).reshape(-1)
@@ -296,38 +296,44 @@ class DataCollatorForT5:
         return is_noise[:orig_len]
 
     def _noise_span_to_unique_sentinel(self, tokens, noise_mask, append_last_sentinel=False) -> torch.LongTensor:
-        ''' pytorch-ported version of https://github.com/google-research/text-to-text-transfer-transformer/blob/bb545f19ec221e6203dd05505573fbc0c0a9001f/t5/data/preprocessors.py#L3074'''
+        """pytorch-ported version of https://github.com/google-research/text-to-text-transfer-transformer/blob/bb545f19ec221e6203dd05505573fbc0c0a9001f/t5/data/preprocessors.py#L3074"""
         if not isinstance(tokens, torch.Tensor):
             tokens = torch.tensor(tokens)
         prev_token_is_noise = torch.cat((torch.tensor([0]), noise_mask[:-1]), dim=0).bool()
-        first_noise_tokens = torch.logical_and(
-            noise_mask, torch.logical_not(prev_token_is_noise))
+        first_noise_tokens = torch.logical_and(noise_mask, torch.logical_not(prev_token_is_noise))
         subsequent_noise_tokens = torch.logical_and(noise_mask, prev_token_is_noise)
         sentinel = self.tokenizer.get_vocab()["<extra_id_0>"] + 1 - torch.cumsum(first_noise_tokens.long(), dim=0)
         tokens = torch.where(first_noise_tokens, sentinel, tokens)
         ret = torch.masked_select(tokens, torch.logical_not(subsequent_noise_tokens))
-        if append_last_sentinel: # target masking needs additional sentinel token at last position
+        if append_last_sentinel:  # target masking needs additional sentinel token at last position
             last_sentinel_id = sentinel.min().reshape(-1) - 1
             ret = torch.cat((ret, last_sentinel_id), dim=0)
-        ret = torch.cat((ret, torch.tensor([self.tokenizer.eos_token_id], dtype=torch.long)), dim=0) # add eos token
+        ret = torch.cat((ret, torch.tensor([self.tokenizer.eos_token_id], dtype=torch.long)), dim=0)  # add eos token
         return ret
-
 
     def __call__(self, examples):
         examples = [example["input_ids"] for example in examples]
         example_n = len(examples)
         example_len = len(examples[0])
         noise_masks = [self._random_spans_noise_mask(example_len) for _ in range(example_n)]
-        inputs = [self._noise_span_to_unique_sentinel(example, noise_mask) for example, noise_mask in zip(examples, noise_masks)]
-        targets = [self._noise_span_to_unique_sentinel(example, ~noise_mask, append_last_sentinel=True) for example, noise_mask in zip(examples, noise_masks)]
+        inputs = [
+            self._noise_span_to_unique_sentinel(example, noise_mask)
+            for example, noise_mask in zip(examples, noise_masks)
+        ]
+        targets = [
+            self._noise_span_to_unique_sentinel(example, ~noise_mask, append_last_sentinel=True)
+            for example, noise_mask in zip(examples, noise_masks)
+        ]
         # make labels and input_ids
         batch = {
             "input_ids": _torch_collate_batch(
-                inputs, tokenizer=self.tokenizer, pad_to_multiple_of=None # all samples' length are set to self.max_length by design
+                inputs,
+                tokenizer=self.tokenizer,
+                pad_to_multiple_of=None,  # all samples' length are set to self.max_length by design
             ),
             "labels": _torch_collate_batch(
-                targets, tokenizer=self.tokenizer, pad_to_multiple_of=None # labels' length are all sample by design
-            )
+                targets, tokenizer=self.tokenizer, pad_to_multiple_of=None  # labels' length are all sample by design
+            ),
         }
         batch["decoder_input_ids"] = shift_tokens_right(
             batch["labels"], self.tokenizer.pad_token_id, self.tokenizer.pad_token_id

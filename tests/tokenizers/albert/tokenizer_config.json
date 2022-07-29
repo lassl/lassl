@@ -1,0 +1,23 @@
+{
+  "bos_token": "[CLS]",
+  "cls_token": "[CLS]",
+  "do_lower_case": true,
+  "eos_token": "[SEP]",
+  "keep_accents": false,
+  "mask_token": {
+    "__type": "AddedToken",
+    "content": "[MASK]",
+    "lstrip": true,
+    "normalized": false,
+    "rstrip": false,
+    "single_word": false
+  },
+  "model_max_length": 512,
+  "name_or_path": "albert-base-v2",
+  "pad_token": "<pad>",
+  "remove_space": true,
+  "sep_token": "[SEP]",
+  "special_tokens_map_file": null,
+  "tokenizer_class": "AlbertTokenizer",
+  "unk_token": "<unk>"
+}
