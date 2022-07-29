@@ -233,24 +233,22 @@ class DataCollatorForBart:
         buffer = []
         for example in examples:
             source_tokens_ids = example
-            source_tokens_ids_length = example.size(0)
+            source_tokens_ids_length = len(example)
             masking_length = int(source_tokens_ids_length * self.mlm_probability)
             masked_length = 0
 
             while masked_length < masking_length:
                 span_length = int(min(self.poisson_dist.sample().item(), source_tokens_ids_length - 1))
                 start_index = torch.randint(0, source_tokens_ids_length - span_length, (1,)).item()
-                source_tokens_ids = torch.concat(
-                    [
-                        source_tokens_ids[:start_index],
-                        torch.tensor([self.tokenizer.mask_token_id]),
-                        source_tokens_ids[start_index + span_length :],
-                    ]
+                source_tokens_ids = (
+                    source_tokens_ids[:start_index]
+                    + [self.tokenizer.mask_token_id]
+                    + source_tokens_ids[start_index + span_length :]
                 )
                 source_tokens_ids_length -= span_length - 1
                 masked_length += span_length
             buffer.append(source_tokens_ids)
-        return pad_sequence(buffer, batch_first=True, padding_value=self.tokenizer.pad_token_id)
+        return _torch_collate_batch(buffer, tokenizer=self.tokenizer, pad_to_multiple_of=self.pad_to_multiple_of)
 
 
 class DataCollatorForT5:

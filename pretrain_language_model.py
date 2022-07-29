@@ -2,7 +2,6 @@ import logging
 import os
 from argparse import ArgumentParser
 
-import torch
 from datasets import Dataset
 from omegaconf import OmegaConf
 from transformers import (
@@ -36,8 +35,6 @@ def main():
     training_args = TrainingArguments(**nested_args.training)
 
     train_dataset = Dataset.load_from_disk(data_args.data_dir)
-    train_dataset.set_format("torch")
-
     eval_dataset = None
     tokenizer = AutoTokenizer.from_pretrained(data_args.data_dir)
 
