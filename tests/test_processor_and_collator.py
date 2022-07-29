@@ -11,7 +11,9 @@ from lassl.utils import load_corpora
 
 def get_args():
     parser = ArgumentParser()
-    parser.add_argument("--model_type", default="bert", choices=["bert", "roberta", "gpt2", "albert", "bart", "t5"])
+    parser.add_argument(
+        "--model_type", default="bert", choices=["bert", "roberta", "gpt2", "albert", "bart", "t5", "electra"]
+    )
     parser.add_argument("--batch_size", type=int, default=2)
     args = parser.parse_args()
     return args
