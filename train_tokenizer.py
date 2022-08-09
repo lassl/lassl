@@ -29,14 +29,14 @@ class DataArguments:
         default=1000,
     )
     sampling_ratio: float = field(
-        default=0.3,
+        default=0.98,
     )
 
 
 @dataclass
 class ModelArguments:
     model_type: str = field(
-        default="t5",
+        default="ul2",
         metadata={
             "choices": [
                 "bert-cased",
@@ -44,18 +44,19 @@ class ModelArguments:
                 "roberta",
                 "albert",
                 "bart",
-                "t5"
+                "t5",
+                "ul2"
             ]
         },
     )
     vocab_size: int = field(
-        default=50000,
+        default=32000,
     )
     min_frequency: int = field(
         default=2,
     )
     additional_special_tokens: Optional[List[str]] = field(
-        default=None,
+        default=field(default_factory=["<s_denoiser_token>","<r_denoiser_token>","<x_denoiser_token>"]),
     )
 
 
