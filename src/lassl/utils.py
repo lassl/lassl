@@ -1,5 +1,6 @@
 from pathlib import Path
 from typing import Generator, Union
+import torch
 
 import datasets
 from datasets import load_dataset
@@ -81,3 +82,51 @@ def compute_indv_chunk_size(target_length, noise_density, mean_span_length):
         tokens_length += 1
     inputs_length, targets_length = _tokens_length_to_inputs_length_targets_length (tokens_length)
     return tokens_length, targets_length
+
+def random_spans_noise_mask(noise_density: float, mean_span_length : float, length : int) -> torch.BoolTensor:
+    ''' pytorch-ported version of https://github.com/google-research/text-to-text-transfer-transformer/blob/bb545f19ec221e6203dd05505573fbc0c0a9001f/t5/data/preprocessors.py#L2901'''
+    orig_len = length
+    length = max(length, 2) # set minumum to 2 to avoid degeneracy
+    num_noise_tokens = round(noise_density * length)
+    num_noise_tokens = min(max(num_noise_tokens, 1), length-1) # set maximum to length-1 
+    num_noise_spans = round(num_noise_tokens / mean_span_length)
+    num_noise_spans = max(num_noise_spans, 1) # set minumum to 1
+    num_nonnoise_tokens = length - num_noise_tokens
+
+    def _random_segmentation(num_items, num_segments):
+        # affected by global seed
+        bars = torch.arange(num_items-1) < num_segments-1
+        bars = bars[torch.randperm(bars.size(0))]
+        bars = torch.cat((torch.tensor([0]), bars), dim=0) # to make segment 0 nonzero
+        segment_id = torch.cumsum(bars, dim=0)
+        segment_length = torch.zeros(num_segments, dtype=torch.long).scatter_add(0, segment_id, torch.ones_like(segment_id))
+        return segment_length 
+    
+    noise_span_lengths = _random_segmentation(num_noise_tokens, num_noise_spans)
+    nonnoise_span_lengths = _random_segmentation(num_nonnoise_tokens, num_noise_spans)
+    interleaved_span_lengths = torch.stack((nonnoise_span_lengths, noise_span_lengths), dim=1).reshape(-1)
+    span_starts = torch.cumsum(interleaved_span_lengths, dim=0)[:-1]
+    span_start_indicator = torch.zeros(length).long().scatter(0, span_starts, torch.ones_like(span_starts))
+    span_num = torch.cumsum(span_start_indicator, dim=0)
+    is_noise = span_num % 2 == 1
+    return is_noise[:orig_len]
+
+def noise_span_to_unique_sentinel(tokenizer, tokens, noise_mask, append_last_sentinel=False, denoiser_prefix_order : List[str] = None) -> torch.LongTensor:
+    ''' pytorch-ported version of https://github.com/google-research/text-to-text-transfer-transformer/blob/bb545f19ec221e6203dd05505573fbc0c0a9001f/t5/data/preprocessors.py#L3074'''
+    if not isinstance(tokens, torch.Tensor):
+        tokens = torch.tensor(tokens)
+    prev_token_is_noise = torch.cat((torch.tensor([0]), noise_mask[:-1]), dim=0).bool()
+    first_noise_tokens = torch.logical_and(
+        noise_mask, torch.logical_not(prev_token_is_noise))
+    subsequent_noise_tokens = torch.logical_and(noise_mask, prev_token_is_noise)
+    sentinel = tokenizer.get_vocab()["<extra_id_0>"] + 1 - torch.cumsum(first_noise_tokens.long(), dim=0)
+    tokens = torch.where(first_noise_tokens, sentinel, tokens)
+    ret = torch.masked_select(tokens, torch.logical_not(subsequent_noise_tokens))
+    if append_last_sentinel: # target masking needs additional sentinel token at last position
+        last_sentinel_id = sentinel.min().reshape(-1) - 1
+        ret = torch.cat((ret, last_sentinel_id), dim=0)
+    ret = torch.cat((ret, torch.tensor([tokenizer.eos_token_id], dtype=torch.long)), dim=0) # add eos token
+    if denoiser_prefix_order is not None:
+        denoiser_token_prefix = [tokenizer.get_vocab().get(denoiser_prefix_order[idx%len(denoiser_prefix_order)]) for idx in range(len(tokens))]
+        ret = torch.cat((torch.tensor(denoiser_token_prefix, dtype=torch.Long), ret), dim=0)
+    return ret

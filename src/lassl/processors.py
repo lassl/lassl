@@ -237,7 +237,7 @@ class UL2Processor(BaseProcessor):
         super().__init__(model_name_or_path=model_name_or_path, max_length=max_length)
         self.noise_densities = noise_densities 
         self.mean_span_lengths = mean_span_lengths
-        self.max_length = max_length
+        self.max_length = max_length - 2 # eos, denoiser_specific_token
         self._chunk_size = self._compute_chunk_size()
 
     def _compute_chunk_size(self) -> Tuple[int,int]:
