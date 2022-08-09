@@ -1,5 +1,6 @@
 from abc import ABC, abstractmethod
 from typing import Dict, List, Tuple
+from lassl.utils import compute_indv_chunk_size
 
 from transformers import AutoTokenizer
 
@@ -200,36 +201,7 @@ class T5Processor(BaseProcessor):
         self.noise_density = noise_density 
         self.mean_span_length = mean_span_length
         self.max_length = max_length
-        self._chunk_size = self._compute_chunk_size()[0]
-
-    def _compute_chunk_size(self) -> Tuple[int,int]:
-        '''
-            compute pre-noise length that is mapped to max_length (= input_size)
-            target size is usually shorter than input size (when noise_density < 0.5)
-            so we compute pre-noise length that makes input size to be max_length
-        '''
-        def _tokens_length_to_inputs_length_targets_length(tokens_length):
-            '''
-                https://github.com/google-research/text-to-text-transfer-transformer/blob/c3be7cf1c20e5f6d83e6de99377b653a3a0bc44a/t5/data/preprocessors.py#L2648 
-            '''
-            num_noise_tokens = int(round(tokens_length * self.noise_density))
-            num_nonnoise_tokens = tokens_length - num_noise_tokens
-            num_noise_spans = int(round(num_noise_tokens / self.mean_span_length))
-            # inputs contain all nonnoise tokens, sentinels for all noise spans
-            # and one EOS token.
-            return (
-                num_nonnoise_tokens +
-                num_noise_spans + 1,
-                num_noise_tokens +
-                num_noise_spans + 1)
-        
-        tokens_length = self.max_length - 1
-        while (_tokens_length_to_inputs_length_targets_length(tokens_length + 1)[0]
-                <= self.max_length):
-            tokens_length += 1
-        inputs_length, targets_length = (
-            _tokens_length_to_inputs_length_targets_length(tokens_length))
-        return tokens_length, targets_length
+        self._chunk_size = compute_indv_chunk_size(self.max_length, self.noise_density, self.mean_span_length)[0]
 
 
     def __call__(self, list_of_str: List[str]) -> Dict[str, List[int]]:
@@ -259,41 +231,25 @@ class T5Processor(BaseProcessor):
         return dict_of_training_examples
 
 class UL2Processor(BaseProcessor):
-    def __init__(self, model_name_or_path: str, max_length: int, noise_density : float = 0.15, mean_span_length : float = 3.0) -> None:
+    def __init__(self, model_name_or_path: str, max_length: int, 
+    noise_densities : List = [0.15,0.15,0.5,0.5,0.15,0.5,0.25], 
+    mean_span_lengths : List = [3.0,8.0,3.0,8.0,64.0,64.0,None]) -> None:
         super().__init__(model_name_or_path=model_name_or_path, max_length=max_length)
-        self.noise_density = noise_density 
-        self.mean_span_length = mean_span_length
+        self.noise_densities = noise_densities 
+        self.mean_span_lengths = mean_span_lengths
         self.max_length = max_length
-        self._chunk_size = self._compute_chunk_size()[0]
+        self._chunk_size = self._compute_chunk_size()
 
     def _compute_chunk_size(self) -> Tuple[int,int]:
         '''
-            compute pre-noise length that is mapped to max_length (= input_size)
-            target size is usually shorter than input size (when noise_density < 0.5)
-            so we compute pre-noise length that makes input size to be max_length
+            compute maximum chunk size for all denoisers
         '''
-        def _tokens_length_to_inputs_length_targets_length(tokens_length):
-            '''
-                https://github.com/google-research/text-to-text-transfer-transformer/blob/c3be7cf1c20e5f6d83e6de99377b653a3a0bc44a/t5/data/preprocessors.py#L2648 
-            '''
-            num_noise_tokens = int(round(tokens_length * self.noise_density))
-            num_nonnoise_tokens = tokens_length - num_noise_tokens
-            num_noise_spans = int(round(num_noise_tokens / self.mean_span_length))
-            # inputs contain all nonnoise tokens, sentinels for all noise spans
-            # and one EOS token.
-            return (
-                num_nonnoise_tokens +
-                num_noise_spans + 1,
-                num_noise_tokens +
-                num_noise_spans + 1)
+        inp_sizes = []
+        for noise_density, mean_span_length in zip(self.noise_densities, self.mean_span_lengths):
+            required_inp_size = compute_indv_chunk_size(self.max_length, noise_density, mean_span_length)[0]
+            inp_sizes.append(required_inp_size)
         
-        tokens_length = self.max_length - 1
-        while (_tokens_length_to_inputs_length_targets_length(tokens_length + 1)[0]
-                <= self.max_length):
-            tokens_length += 1
-        inputs_length, targets_length = (
-            _tokens_length_to_inputs_length_targets_length(tokens_length))
-        return tokens_length, targets_length
+        return max(inp_sizes)
 
 
     def __call__(self, list_of_str: List[str]) -> Dict[str, List[int]]:

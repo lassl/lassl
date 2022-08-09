@@ -56,3 +56,28 @@ def get_params_without_weight_decay_ln(named_params: Union[list, Generator], wei
         },
     ]
     return optimizer_grouped_parameters
+
+def compute_indv_chunk_size(target_length, noise_density, mean_span_length):
+    '''pre-corruption token length approximation for T5 and UL2'''
+    def _tokens_length_to_inputs_length_targets_length(tokens_length):
+        '''
+            https://github.com/google-research/text-to-text-transfer-transformer/blob/c3be7cf1c20e5f6d83e6de99377b653a3a0bc44a/t5/data/preprocessors.py#L2648 
+        '''
+        # setting mean_span_length to None means prefix-lm that masks last 25% tokens
+        num_noise_tokens = int(round(tokens_length * noise_density))
+        num_nonnoise_tokens = tokens_length - num_noise_tokens
+        num_noise_spans = 1 if mean_span_length is None else int(round(num_noise_tokens / mean_span_length))
+        # inputs contain all nonnoise tokens, sentinels for all noise spans
+        # and one EOS token.
+        return (
+            num_nonnoise_tokens +
+            num_noise_spans + 1,
+            num_noise_tokens +
+            num_noise_spans + 1)
+    
+    tokens_length = target_length - 1
+    while (_tokens_length_to_inputs_length_targets_length(tokens_length + 1)[0]
+            <= target_length):
+        tokens_length += 1
+    inputs_length, targets_length = _tokens_length_to_inputs_length_targets_length (tokens_length)
+    return tokens_length, targets_length
