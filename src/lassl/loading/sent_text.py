@@ -2,9 +2,8 @@ import itertools
 from dataclasses import dataclass
 from typing import Optional
 
-import pyarrow as pa
-
 import datasets
+import pyarrow as pa
 
 logger = datasets.utils.logging.get_logger(__name__)
 
