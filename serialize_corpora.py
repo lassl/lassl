@@ -2,15 +2,6 @@ from dataclasses import dataclass, field
 
 from transformers import HfArgumentParser
 
-from lassl.processors import (
-    AlbertProcessor,
-    BertProcessor,
-    GPT2Processor,
-    RobertaProcessor,
-    BartProcessor,
-    T5Processor
-)
-
 from lassl import MODEL_TYPE_TO_PROCESSOR
 from lassl.utils import load_corpora
 

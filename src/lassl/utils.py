@@ -1,6 +1,8 @@
 from pathlib import Path
 from typing import Generator, Union
 import torch
+import random
+from typing import List
 
 import datasets
 from datasets import load_dataset
@@ -17,7 +19,8 @@ def batch_iterator(
         yield dataset[i : i + batch_size][key]
 
 
-def load_corpora(dir_path, corpus_type="docu_json"):
+def load_corpora(dir_path, corpus_type="docu_json", **kwargs):
+    '''kwargs can contain arguments such as `cache_dir`'''
     corpora_dir = Path(dir_path).absolute()
     extension = corpus_type.split("_")[-1]
 
@@ -33,11 +36,11 @@ def load_corpora(dir_path, corpus_type="docu_json"):
         raise Exception(f"{extension} is not supported.")
 
     if corpus_type == "docu_text":
-        return load_dataset("text", data_files=list_of_file_paths, split="train")
+        return load_dataset("text", data_files=list_of_file_paths, split="train", **kwargs)
     elif corpus_type == "docu_json":
-        return load_dataset("json", data_files=list_of_file_paths, split="train")
+        return load_dataset("json", data_files=list_of_file_paths, split="train", **kwargs)
     elif corpus_type == "sent_text":
-        return load_dataset(SENT_TEXT_SCRIPT, data_files=list_of_file_paths, split="train")
+        return load_dataset(SENT_TEXT_SCRIPT, data_files=list_of_file_paths, split="train", **kwargs)
     elif corpus_type == "sent_json":
         raise NotImplementedError("sent_json will be supported soon.")
     else:
@@ -115,6 +118,15 @@ def noise_span_to_unique_sentinel(tokenizer, tokens, noise_mask, append_last_sen
     ''' pytorch-ported version of https://github.com/google-research/text-to-text-transfer-transformer/blob/bb545f19ec221e6203dd05505573fbc0c0a9001f/t5/data/preprocessors.py#L3074'''
     if not isinstance(tokens, torch.Tensor):
         tokens = torch.tensor(tokens)
+    
+    # sample consecutive substring from tokens if len(tokens) > len(noise_mask)
+    # in case of T5, these two should match. In case of UL2, due to use of several denoisers, number of tokens could be larger than length of noise masks.
+    if len(tokens) > len(noise_mask):
+        offset = len(tokens) - len(noise_mask)
+        start_idx = random.randint(0,offset)
+        tokens = tokens[start_idx : start_idx + len(noise_mask)]
+        assert len(tokens) == len(noise_mask)
+
     prev_token_is_noise = torch.cat((torch.tensor([0]), noise_mask[:-1]), dim=0).bool()
     first_noise_tokens = torch.logical_and(
         noise_mask, torch.logical_not(prev_token_is_noise))
