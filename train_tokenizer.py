@@ -55,8 +55,10 @@ class ModelArguments:
     min_frequency: int = field(
         default=2,
     )
-    additional_special_tokens: Optional[List[str]] = field(
-        default=field(default_factory=["<s_denoiser_token>","<r_denoiser_token>","<x_denoiser_token>"]),
+    # NOTE(DaehanKim) list format is not working -> comma seperated values
+    additional_special_tokens : str = field(
+        default=",".join(["<s_denoiser_token>","<r_denoiser_token>","<x_denoiser_token>"]), 
+        # default=""
     )
 
 
@@ -78,6 +80,8 @@ def main():
     data_iterator = batch_iterator(corpora, batch_size=data_args.batch_size)
 
     if model_args.additional_special_tokens:
+        model_args.additional_special_tokens = model_args.additional_special_tokens.split(",")
+        print(model_args.additional_special_tokens)
         assert len(model_args.additional_special_tokens) == len(
             set(model_args.additional_special_tokens)
         ), "Each additional special tokens must be unique."

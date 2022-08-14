@@ -307,7 +307,6 @@ class DataCollatorForUL2:
 
         examples = [example["input_ids"] for example in examples]
         example_n = len(examples)
-        example_len = len(examples[0])
         noise_masks = [self._noise_mask_with_index(idx) for idx in range(example_n)]
         inputs = [noise_span_to_unique_sentinel(self.tokenizer, example, noise_mask, denoiser_prefix_order=denoiser_prefix_order) for example, noise_mask in zip(examples, noise_masks)]
         targets = [noise_span_to_unique_sentinel(self.tokenizer, example, ~noise_mask, append_last_sentinel=True) for example, noise_mask in zip(examples, noise_masks)]
