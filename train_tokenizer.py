@@ -1,14 +1,20 @@
 from dataclasses import dataclass, field
-from typing import List, Optional
+from typing import List, Optional, Tuple
 
 from numpy.random import choice
-from transformers import AutoTokenizer, HfArgumentParser
+from transformers import AutoTokenizer, HfArgumentParser, T5Tokenizer
+# from tokenizers.implementations import SentencePieceBPETokenizer
+from tokenizers.implementations.base_tokenizer import BaseTokenizer
 
 from lassl import MODEL_TYPE_TO_PREDEFINED_MODEL
 from lassl.utils import batch_iterator, load_corpora
 
-
-
+def get_tokenizer_cls(cls_name, **kwarg) -> BaseTokenizer:
+    '''get tokenizer class(either pretrained or newly initialized instance)'''
+    if cls_name == "ul2-base":
+        return T5Tokenizer(extra_ids = kwarg["extra_ids"])
+    return AutoTokenizer.from_pretrained(cls_name)
+    
 @dataclass
 class DataArguments:
     corpora_dir: str = field(
@@ -31,6 +37,9 @@ class DataArguments:
     sampling_ratio: float = field(
         default=0.98,
     )
+    cache_dir : str = field(
+        default="./.cache"
+    )
 
 
 @dataclass
@@ -50,22 +59,25 @@ class ModelArguments:
         },
     )
     vocab_size: int = field(
-        default=32000,
+        default=32150,
     )
     min_frequency: int = field(
         default=2,
     )
-    # NOTE(DaehanKim) list format is not working -> comma seperated values
+    # NOTE(DaehanKim) List[str] format is not working -> comma seperated values
+    # e.g. default=",".join(["<s_denoiser_token>","<r_denoiser_token>","<x_denoiser_token>"])
     additional_special_tokens : str = field(
-        default=",".join(["<s_denoiser_token>","<r_denoiser_token>","<x_denoiser_token>"]), 
-        # default=""
+        default=""
     )
-
+    # NOTE(DaehanKim) : Only used for UL2 Tokenizer training
+    extra_ids: int = field( 
+        default=150,
+    )
 
 def main():
     parser = HfArgumentParser((DataArguments, ModelArguments))
     data_args, model_args = parser.parse_args_into_dataclasses()
-    corpora = load_corpora(data_args.corpora_dir, data_args.corpus_type)
+    corpora = load_corpora(data_args.corpora_dir, data_args.corpus_type, cache_dir=data_args.cache_dir)
 
     assert data_args.sampling_ratio > 0, "sampling_ratio must be greater than 0."
 
@@ -76,7 +88,7 @@ def main():
     else:
         print("Since sampling_ratio >= 1.0, all corpora will be used.")
 
-    tokenizer = AutoTokenizer.from_pretrained(MODEL_TYPE_TO_PREDEFINED_MODEL[model_args.model_type])
+    tokenizer = get_tokenizer_cls(MODEL_TYPE_TO_PREDEFINED_MODEL[model_args.model_type])
     data_iterator = batch_iterator(corpora, batch_size=data_args.batch_size)
 
     if model_args.additional_special_tokens:
