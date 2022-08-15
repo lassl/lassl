@@ -114,7 +114,7 @@ def random_spans_noise_mask(noise_density: float, mean_span_length : float, leng
     is_noise = span_num % 2 == 1
     return is_noise[:orig_len]
 
-def noise_span_to_unique_sentinel(tokenizer, tokens, noise_mask, append_last_sentinel=False, denoiser_prefix_order : List[str] = None) -> torch.LongTensor:
+def noise_span_to_unique_sentinel(tokenizer, tokens, noise_mask, append_last_sentinel=False, denoiser_prefix_order : List[str] = None, first_extra_id : str = "<extra_id_0>") -> torch.LongTensor:
     ''' pytorch-ported version of https://github.com/google-research/text-to-text-transfer-transformer/blob/bb545f19ec221e6203dd05505573fbc0c0a9001f/t5/data/preprocessors.py#L3074'''
     if not isinstance(tokens, torch.Tensor):
         tokens = torch.tensor(tokens)
@@ -131,7 +131,7 @@ def noise_span_to_unique_sentinel(tokenizer, tokens, noise_mask, append_last_sen
     first_noise_tokens = torch.logical_and(
         noise_mask, torch.logical_not(prev_token_is_noise))
     subsequent_noise_tokens = torch.logical_and(noise_mask, prev_token_is_noise)
-    sentinel = tokenizer.get_vocab()["<extra_id_0>"] + 1 - torch.cumsum(first_noise_tokens.long(), dim=0)
+    sentinel = tokenizer.get_vocab()[first_extra_id] + 1 - torch.cumsum(first_noise_tokens.long(), dim=0)
     tokens = torch.where(first_noise_tokens, sentinel, tokens)
     ret = torch.masked_select(tokens, torch.logical_not(subsequent_noise_tokens))
     if append_last_sentinel: # target masking needs additional sentinel token at last position

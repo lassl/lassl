@@ -308,8 +308,8 @@ class DataCollatorForUL2:
         examples = [example["input_ids"] for example in examples]
         example_n = len(examples)
         noise_masks = [self._noise_mask_with_index(idx) for idx in range(example_n)]
-        inputs = [noise_span_to_unique_sentinel(self.tokenizer, example, noise_mask, denoiser_prefix_order=denoiser_prefix_order) for example, noise_mask in zip(examples, noise_masks)]
-        targets = [noise_span_to_unique_sentinel(self.tokenizer, example, ~noise_mask, append_last_sentinel=True) for example, noise_mask in zip(examples, noise_masks)]
+        inputs = [noise_span_to_unique_sentinel(self.tokenizer, example, noise_mask, denoiser_prefix_order=denoiser_prefix_order, first_extra_id = "[new_id_27]") for example, noise_mask in zip(examples, noise_masks)]
+        targets = [noise_span_to_unique_sentinel(self.tokenizer, example, ~noise_mask, append_last_sentinel=True, first_extra_id = "[new_id_27]") for example, noise_mask in zip(examples, noise_masks)]
         # make labels and input_ids
         batch = {
             "input_ids": _torch_collate_batch(
