@@ -2,18 +2,18 @@ from dataclasses import dataclass, field
 from typing import List, Optional, Tuple
 
 from numpy.random import choice
-from transformers import AutoTokenizer, HfArgumentParser, T5Tokenizer
+from transformers import AutoTokenizer, HfArgumentParser
 # from tokenizers.implementations import SentencePieceBPETokenizer
-from tokenizers.implementations.base_tokenizer import BaseTokenizer
+# from tokenizers.implementations.base_tokenizer import BaseTokenizer
 
 from lassl import MODEL_TYPE_TO_PREDEFINED_MODEL
 from lassl.utils import batch_iterator, load_corpora
 
-def get_tokenizer_cls(cls_name, **kwarg) -> BaseTokenizer:
-    '''get tokenizer class(either pretrained or newly initialized instance)'''
-    if cls_name == "ul2-base":
-        return T5Tokenizer(extra_ids = kwarg["extra_ids"])
-    return AutoTokenizer.from_pretrained(cls_name)
+# def get_tokenizer_cls(cls_name, **kwarg) -> BaseTokenizer:
+#     '''get tokenizer class(either pretrained or newly initialized instance)'''
+#     if cls_name == "ul2-base":
+#         return T5Tokenizer(extra_ids = kwarg["extra_ids"])
+#     return AutoTokenizer.from_pretrained(cls_name)
     
 @dataclass
 class DataArguments:
@@ -59,19 +59,15 @@ class ModelArguments:
         },
     )
     vocab_size: int = field(
-        default=32150,
+        default=32128,
     )
     min_frequency: int = field(
         default=2,
     )
     # NOTE(DaehanKim) List[str] format is not working -> comma seperated values
     # e.g. default=",".join(["<s_denoiser_token>","<r_denoiser_token>","<x_denoiser_token>"])
-    additional_special_tokens : str = field(
-        default=""
-    )
-    # NOTE(DaehanKim) : Only used for UL2 Tokenizer training
-    extra_ids: int = field( 
-        default=150,
+    additional_special_tokens : Optional[str] = field(
+        default=None,
     )
 
 def main():
@@ -88,7 +84,7 @@ def main():
     else:
         print("Since sampling_ratio >= 1.0, all corpora will be used.")
 
-    tokenizer = get_tokenizer_cls(MODEL_TYPE_TO_PREDEFINED_MODEL[model_args.model_type])
+    tokenizer = AutoTokenizer.from_pretrained(MODEL_TYPE_TO_PREDEFINED_MODEL[model_args.model_type])
     data_iterator = batch_iterator(corpora, batch_size=data_args.batch_size)
 
     if model_args.additional_special_tokens:
@@ -105,7 +101,7 @@ def main():
             data_iterator,
             vocab_size=model_args.vocab_size,
             min_frequency=model_args.min_frequency,
-            new_special_tokens=model_args.additional_special_tokens,
+            new_special_tokens=model_args.additional_special_tokens
         )
     else:
         tokenizer = tokenizer.train_new_from_iterator(

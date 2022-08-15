@@ -26,7 +26,7 @@ MODEL_TYPE_TO_PREDEFINED_MODEL = {
     "albert": "albert-base-v2",
     "bart": "facebook/bart-base",
     "t5" : "t5-base",
-    "ul2" : "ul2-base"
+    "ul2" : "google/ul2"
 }
 
 # in serialize_corpora.py

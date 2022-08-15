@@ -142,3 +142,4 @@ def noise_span_to_unique_sentinel(tokenizer, tokens, noise_mask, append_last_sen
         denoiser_token_prefix = [tokenizer.get_vocab().get(denoiser_prefix_order[idx%len(denoiser_prefix_order)]) for idx in range(len(tokens))]
         ret = torch.cat((torch.tensor(denoiser_token_prefix, dtype=torch.Long), ret), dim=0)
     return ret
+
