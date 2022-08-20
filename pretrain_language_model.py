@@ -1,14 +1,12 @@
 import logging
 import os
 from argparse import ArgumentParser
-import torch
 
 from omegaconf import OmegaConf
 from transformers import (
     CONFIG_MAPPING,
     AutoModelForPreTraining,
     AutoTokenizer,
-    DataCollator,
     Trainer,
     TrainingArguments,
     set_seed,
@@ -41,11 +39,14 @@ def main():
     eval_dataset = None
     tokenizer = AutoTokenizer.from_pretrained(data_args.data_dir)
 
-    assert (
-        model_args.model_type in CONFIG_MAPPING.keys()
-    ), f"model_args.model_type must be one of {CONFIG_MAPPING.keys()}"
+    if model_args.model_type == "ul2":
+        model_config = CONFIG_MAPPING["t5"](**model_args) # ul2 leverages same model configs as t5
+    else:
+        assert (
+            model_args.model_type in CONFIG_MAPPING.keys()
+        ), f"model_args.model_type must be one of {CONFIG_MAPPING.keys()}"
 
-    model_config = CONFIG_MAPPING[model_args.model_type](**model_args)
+        model_config = CONFIG_MAPPING[model_args.model_type](**model_args)
     model = AutoModelForPreTraining.from_config(model_config)
     model.resize_token_embeddings(tokenizer.vocab_size)
 

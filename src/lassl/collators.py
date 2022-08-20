@@ -284,8 +284,9 @@ class DataCollatorForUL2:
         pad_to_multiple_of: int = 8,
         noise_densities : List = [0.15,0.15,0.5,0.5,0.15,0.5,0.25], 
         mean_span_lengths : List = [3.0,8.0,3.0,8.0,64.0,64.0,None],
-        optional_task_prefixes : List[str] = ["<r_denoiser_token>","<r_denoiser_token>","<x_denoiser_token>","<x_denoiser_token>","<x_denoiser_token>","<x_denoiser_token>","<s_denoiser_token>"]
+        optional_task_prefixes : List[str] = ["[NLU]","[NLU]","[NLG]","[NLG]","[NLG]","[NLG]","[S2S]"]
     ):
+        mean_span_lengths = [None if isinstance(e, str) else e for e in mean_span_lengths]
         self.tokenizer = tokenizer
         self.pad_to_multiple_of = pad_to_multiple_of
         self.noise_densities = noise_densities 
@@ -296,20 +297,26 @@ class DataCollatorForUL2:
         index = self.get_index(index) # get shuffled index
         _noise_density = self.noise_densities[index]
         _mean_span_length = self.mean_span_lengths[index]
-        inp_size = compute_indv_chunk_size(512, _noise_density, _mean_span_length)[0]
+        inp_size, _, _mean_span_length = compute_indv_chunk_size(510, _noise_density, _mean_span_length)
         return random_spans_noise_mask(_noise_density, _mean_span_length, inp_size)
 
+    def _unique_sentinel_input_with_index(self, example, noise_mask, index):
+        denoiser_prefix = self.optional_task_prefixes[self.get_index(index)] 
+        return noise_span_to_unique_sentinel(self.tokenizer, example, noise_mask, denoiser_prefix=denoiser_prefix, first_extra_id = "[new_id_27]")
+
+    def _unique_sentinel_target(self, example, noise_mask):
+        return noise_span_to_unique_sentinel(self.tokenizer, example, ~noise_mask, append_last_sentinel=True, first_extra_id = "[new_id_27]")
 
     def __call__(self, examples):
-        denoiser_order = np.random.permutation(len(self.noise_densities))
+        denoiser_order = np.random.permutation(len(self.noise_densities)).tolist()
         self.get_index = lambda idx : denoiser_order[idx % len(self.noise_densities)]
         denoiser_prefix_order = [self.optional_task_prefixes[i] for i in denoiser_order] 
 
         examples = [example["input_ids"] for example in examples]
         example_n = len(examples)
         noise_masks = [self._noise_mask_with_index(idx) for idx in range(example_n)]
-        inputs = [noise_span_to_unique_sentinel(self.tokenizer, example, noise_mask, denoiser_prefix_order=denoiser_prefix_order, first_extra_id = "[new_id_27]") for example, noise_mask in zip(examples, noise_masks)]
-        targets = [noise_span_to_unique_sentinel(self.tokenizer, example, ~noise_mask, append_last_sentinel=True, first_extra_id = "[new_id_27]") for example, noise_mask in zip(examples, noise_masks)]
+        inputs = [self._unique_sentinel_input_with_index(example, noise_mask, index) for index, (example, noise_mask) in enumerate(zip(examples, noise_masks))]
+        targets = [self._unique_sentinel_target(example, noise_mask) for example, noise_mask in zip(examples, noise_masks)]
         # make labels and input_ids
         batch = {
             "input_ids": _torch_collate_batch(

@@ -2,7 +2,7 @@ from pathlib import Path
 from typing import Generator, Union
 import torch
 import random
-from typing import List
+from typing import List, Optional
 
 import datasets
 from datasets import load_dataset
@@ -84,7 +84,9 @@ def compute_indv_chunk_size(target_length, noise_density, mean_span_length):
             <= target_length):
         tokens_length += 1
     inputs_length, targets_length = _tokens_length_to_inputs_length_targets_length (tokens_length)
-    return tokens_length, targets_length
+    if mean_span_length is None:
+        mean_span_length = targets_length - 2
+    return tokens_length, targets_length, mean_span_length
 
 def random_spans_noise_mask(noise_density: float, mean_span_length : float, length : int) -> torch.BoolTensor:
     ''' pytorch-ported version of https://github.com/google-research/text-to-text-transfer-transformer/blob/bb545f19ec221e6203dd05505573fbc0c0a9001f/t5/data/preprocessors.py#L2901'''
@@ -114,7 +116,7 @@ def random_spans_noise_mask(noise_density: float, mean_span_length : float, leng
     is_noise = span_num % 2 == 1
     return is_noise[:orig_len]
 
-def noise_span_to_unique_sentinel(tokenizer, tokens, noise_mask, append_last_sentinel=False, denoiser_prefix_order : List[str] = None, first_extra_id : str = "<extra_id_0>") -> torch.LongTensor:
+def noise_span_to_unique_sentinel(tokenizer, tokens, noise_mask, append_last_sentinel=False, denoiser_prefix : Optional[str] = None, first_extra_id : str = "<extra_id_0>") -> torch.LongTensor:
     ''' pytorch-ported version of https://github.com/google-research/text-to-text-transfer-transformer/blob/bb545f19ec221e6203dd05505573fbc0c0a9001f/t5/data/preprocessors.py#L3074'''
     if not isinstance(tokens, torch.Tensor):
         tokens = torch.tensor(tokens)
@@ -138,8 +140,11 @@ def noise_span_to_unique_sentinel(tokenizer, tokens, noise_mask, append_last_sen
         last_sentinel_id = sentinel.min().reshape(-1) - 1
         ret = torch.cat((ret, last_sentinel_id), dim=0)
     ret = torch.cat((ret, torch.tensor([tokenizer.eos_token_id], dtype=torch.long)), dim=0) # add eos token
-    if denoiser_prefix_order is not None:
-        denoiser_token_prefix = [tokenizer.get_vocab().get(denoiser_prefix_order[idx%len(denoiser_prefix_order)]) for idx in range(len(tokens))]
-        ret = torch.cat((torch.tensor(denoiser_token_prefix, dtype=torch.Long), ret), dim=0)
+    
+    if denoiser_prefix:
+    # used only for UL2, which prepends one of [S2S], [NLG], [NLU] during training. 
+    # These tokens are not treated as special tokens but they are tokenized as normal tokens.
+        denoiser_prefix_enc = torch.tensor(tokenizer.encode(denoiser_prefix)[:1], dtype=torch.long)
+        ret = torch.cat((denoiser_prefix_enc, ret), dim=0)
     return ret
 
