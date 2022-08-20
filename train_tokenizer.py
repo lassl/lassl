@@ -65,9 +65,9 @@ class ModelArguments:
         default=2,
     )
     # NOTE(DaehanKim) List[str] format is not working -> comma seperated values
-    # e.g. default=",".join(["<s_denoiser_token>","<r_denoiser_token>","<x_denoiser_token>"])
+    # e.g. default=",".join(["[NLU]","[NLG]","[S2S]"])
     additional_special_tokens : Optional[str] = field(
-        default=None,
+        default=",".join(["[NLU]","[NLG]","[S2S]"]),
     )
 
 def main():
