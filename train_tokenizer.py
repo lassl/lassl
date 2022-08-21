@@ -86,8 +86,8 @@ def main():
 
     tokenizer = AutoTokenizer.from_pretrained(MODEL_TYPE_TO_PREDEFINED_MODEL[model_args.model_type])
     data_iterator = batch_iterator(corpora, batch_size=data_args.batch_size)
-
     if model_args.additional_special_tokens:
+        print(f"Additional Special Tokens : {model_args.additional_special_tokens}")
         model_args.additional_special_tokens = model_args.additional_special_tokens.split(",")
         print(model_args.additional_special_tokens)
         assert len(model_args.additional_special_tokens) == len(
@@ -96,7 +96,6 @@ def main():
         assert not set(tokenizer.all_special_tokens).intersection(
             set(model_args.additional_special_tokens)
         ), "Each additional special tokens are not of default special tokens from tokenizer."
-
         tokenizer = tokenizer.train_new_from_iterator(
             data_iterator,
             vocab_size=model_args.vocab_size,

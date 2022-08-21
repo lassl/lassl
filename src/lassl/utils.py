@@ -125,6 +125,7 @@ def noise_span_to_unique_sentinel(tokenizer, tokens, noise_mask, append_last_sen
     # in case of T5, these two should match. In case of UL2, due to use of several denoisers, number of tokens could be larger than length of noise masks.
     if len(tokens) > len(noise_mask):
         offset = len(tokens) - len(noise_mask)
+        random.seed(tokens[0].item()) # seed that makes same example to match in both making inputs and targets
         start_idx = random.randint(0,offset)
         tokens = tokens[start_idx : start_idx + len(noise_mask)]
         assert len(tokens) == len(noise_mask)

@@ -310,7 +310,7 @@ class DataCollatorForUL2:
     def __call__(self, examples):
         denoiser_order = np.random.permutation(len(self.noise_densities)).tolist()
         self.get_index = lambda idx : denoiser_order[idx % len(self.noise_densities)]
-        denoiser_prefix_order = [self.optional_task_prefixes[i] for i in denoiser_order] 
+        # denoiser_prefix_order = [self.optional_task_prefixes[i] for i in denoiser_order] 
 
         examples = [example["input_ids"] for example in examples]
         example_n = len(examples)
@@ -320,7 +320,7 @@ class DataCollatorForUL2:
         # make labels and input_ids
         batch = {
             "input_ids": _torch_collate_batch(
-                inputs, tokenizer=self.tokenizer, pad_to_multiple_of=None # all samples' length are set to self.max_length by design
+                inputs, tokenizer=self.tokenizer, pad_to_multiple_of=self.pad_to_multiple_of # all samples' length are set to self.max_length by design
             ),
             "labels": _torch_collate_batch(
                 targets, tokenizer=self.tokenizer, pad_to_multiple_of=self.pad_to_multiple_of # labels' length are all sample by design
