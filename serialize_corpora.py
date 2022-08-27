@@ -1,7 +1,6 @@
 from dataclasses import dataclass, field
 
 from transformers import HfArgumentParser
-
 from lassl import MODEL_TYPE_TO_PROCESSOR
 from lassl.utils import load_corpora
 
@@ -18,17 +17,14 @@ class Arguments:
                 "albert",
                 "bart",
                 "t5",
-                "ul2"
+                "ul2",
+                "electra"
             ]
         },
     )
-    tokenizer_dir: str = field(
-        default = "tokenizers/ul2"
-        ### pretrained options
-        # default="KETI-AIR/ke-t5-small",
-        # default="hyunwoongko/kobart"
-    )
-    corpora_dir: str = field(
+    tokenizer_dirpath: str = field(default="tokenizers/bert")
+    output_base_dirpath: str = field(default="datasets")
+    corpora_dirpath: str = field(
         default="corpora",
     )
     corpus_type: str = field(
@@ -68,7 +64,7 @@ class Arguments:
 def main():
     parser = HfArgumentParser(Arguments)
     args = parser.parse_args_into_dataclasses()[0]
-    data_processor = MODEL_TYPE_TO_PROCESSOR[args.model_type](args.tokenizer_dir, args.max_length)
+    data_processor = MODEL_TYPE_TO_PROCESSOR[args.model_type](args.tokenizer_dirpath, args.max_length)
 
     corpora = load_corpora(args.corpora_dir, corpus_type=args.corpus_type, cache_dir=args.cache_dir)
 
@@ -83,8 +79,8 @@ def main():
         remove_columns=corpora.column_names,
     )
 
-    dataset.save_to_disk("datasets/" + args.model_type)
-    data_processor.save_tokenizer("datasets/" + args.model_type)
+    dataset.save_to_disk(f"{args.output_base_dirpath}/{args.model_type}")
+    data_processor.save_tokenizer(f"{args.output_base_dirpath}/{args.model_type}")
 
 
 if __name__ == "__main__":

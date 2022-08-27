@@ -1,8 +1,8 @@
 from collections import Counter
 
 import pytest
-
 from datasets import load_dataset
+
 from lassl.blender import DatasetBlender
 
 

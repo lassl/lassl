@@ -2,6 +2,7 @@ import logging
 import os
 from argparse import ArgumentParser
 
+from datasets import Dataset
 from omegaconf import OmegaConf
 from transformers import (
     CONFIG_MAPPING,
@@ -12,8 +13,8 @@ from transformers import (
     set_seed,
 )
 from transformers.trainer_utils import get_last_checkpoint
-from datasets import Dataset
 from lassl import MODEL_TYPE_TO_COLLATOR, TokenizerSaveCallback
+
 
 logger = logging.getLogger(__name__)
 
@@ -34,8 +35,6 @@ def main():
     training_args = TrainingArguments(**nested_args.training)
 
     train_dataset = Dataset.load_from_disk(data_args.data_dir)
-    train_dataset.set_format("torch")
-
     eval_dataset = None
     tokenizer = AutoTokenizer.from_pretrained(data_args.data_dir)
 

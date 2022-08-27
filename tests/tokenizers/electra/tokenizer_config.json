@@ -1,0 +1,14 @@
+{
+  "cls_token": "[CLS]",
+  "do_lower_case": true,
+  "mask_token": "[MASK]",
+  "model_max_length": 512,
+  "name_or_path": "google/electra-base-discriminator",
+  "pad_token": "[PAD]",
+  "sep_token": "[SEP]",
+  "special_tokens_map_file": null,
+  "strip_accents": null,
+  "tokenize_chinese_chars": true,
+  "tokenizer_class": "ElectraTokenizer",
+  "unk_token": "[UNK]"
+}

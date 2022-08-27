@@ -19,6 +19,29 @@ def tolist(x):
     return x.tolist()
 
 
+def _token_type_ids_with_pad(examples: Any, tokenizer: PreTrainedTokenizerBase, pad_to_multiple_of: int = 8) -> torch.Tensor:
+    """
+    Create "token_type_ids" for Bert-like models
+    used when token_a & token_b already in the same chunk separated by [SEP] token 
+    (for those not in the same chunk, use "tokenizer.create_token_type_ids_from_sequences(token_a, token_b)")
+    """
+    if isinstance(examples, torch.Tensor):
+        examples = examples.tolist()
+    if max([len(example) for example in examples]) % pad_to_multiple_of == 0:
+        max_seq_len = max([len(example) for example in examples])
+    else:
+        max_seq_len = pad_to_multiple_of + (max([len(example) for example in examples])//pad_to_multiple_of)*pad_to_multiple_of
+    token_type_ids_with_padding = []
+    for example in examples:
+        for idx in range(len(example)):
+            if example[idx] == tokenizer.sep_token_id and idx != len(example) - 1:
+                token_type_ids_with_padding.append([0]*(idx+1) + [1]*(max_seq_len-idx-1))
+                break
+            if idx == len(example) - 1:
+                token_type_ids_with_padding.append([0 for _ in range(max_seq_len)])
+    return torch.tensor(token_type_ids_with_padding).long()
+
+
 class DataCollatorForBert(DataCollatorForWholeWordMask):
     """
     Processing training examples to mini-batch for Bert (mlm+wwm+sop).
@@ -208,25 +231,61 @@ class DataCollatorForBart:
         buffer = []
         for example in examples:
             source_tokens_ids = example
-            source_tokens_ids_length = example.size(0)
+            source_tokens_ids_length = len(example)
             masking_length = int(source_tokens_ids_length * self.mlm_probability)
             masked_length = 0
 
             while masked_length < masking_length:
                 span_length = int(min(self.poisson_dist.sample().item(), source_tokens_ids_length - 1))
                 start_index = torch.randint(0, source_tokens_ids_length - span_length, (1,)).item()
-                source_tokens_ids = torch.concat(
-                    [
-                        source_tokens_ids[:start_index],
-                        torch.tensor([self.tokenizer.mask_token_id]),
-                        source_tokens_ids[start_index + span_length :],
-                    ]
+                source_tokens_ids = (
+                    source_tokens_ids[:start_index]
+                    + [self.tokenizer.mask_token_id]
+                    + source_tokens_ids[start_index + span_length :]
                 )
                 source_tokens_ids_length -= span_length - 1
                 masked_length += span_length
             buffer.append(source_tokens_ids)
-        return pad_sequence(buffer, batch_first=True, padding_value=self.tokenizer.pad_token_id)
 
+        return _torch_collate_batch(buffer, tokenizer=self.tokenizer, pad_to_multiple_of=self.pad_to_multiple_of)
+
+
+class DataCollatorForElectra(DataCollatorForWholeWordMask):
+    """
+    Processing training examples to mini-batch for Electra (fake input discrimination).
+    Modified implementation: discriminator only version
+    """
+    def __init__(
+        self,
+        tokenizer: PreTrainedTokenizerBase,
+        mlm_probability: float = 0.15,
+        pad_to_multiple_of: int = 8
+    ):
+        self.tokenizer = tokenizer
+        self.mlm_probability = mlm_probability
+        self.pad_to_multiple_of = pad_to_multiple_of
+        
+    def __call__(self, examples: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+        examples = [example["input_ids"].tolist() if isinstance(example["input_ids"], torch.Tensor) else example["input_ids"] for example in examples]
+        batch = self._generate_fake_inputs(examples)
+        batch["attention_mask"] = (batch["input_ids"] != self.tokenizer.pad_token_id).long()
+        batch["token_type_ids"] = _token_type_ids_with_pad(
+            batch["input_ids"], self.tokenizer, pad_to_multiple_of=self.pad_to_multiple_of
+            )
+        return batch
+        
+    def _generate_fake_inputs(self, examples: List[List[int]]) -> Dict[str, Any]:
+        input_ids = [self.tokenizer.prepare_for_model(example, padding=False)["input_ids"] for example in examples]
+        original_input_ids = _torch_collate_batch(input_ids, self.tokenizer, pad_to_multiple_of=self.pad_to_multiple_of)
+        torch_masked_boolean: torch.Tensor = super().__call__(input_ids)["input_ids"] == self.tokenizer.mask_token_id
+        whole_random_ids = torch.randint(0, self.tokenizer.vocab_size-1, torch_masked_boolean.size())
+        fake_generated_ids = torch.where(torch_masked_boolean, whole_random_ids, original_input_ids)
+        labels = (original_input_ids != fake_generated_ids).long()
+        return {
+            "input_ids": fake_generated_ids,
+            "labels": labels,
+            "original_input_ids": original_input_ids
+        }
 
 class DataCollatorForT5:
     """

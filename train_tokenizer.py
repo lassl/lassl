@@ -3,21 +3,13 @@ from typing import List, Optional, Tuple
 
 from numpy.random import choice
 from transformers import AutoTokenizer, HfArgumentParser
-# from tokenizers.implementations import SentencePieceBPETokenizer
-# from tokenizers.implementations.base_tokenizer import BaseTokenizer
-
 from lassl import MODEL_TYPE_TO_PREDEFINED_MODEL
 from lassl.utils import batch_iterator, load_corpora
 
-# def get_tokenizer_cls(cls_name, **kwarg) -> BaseTokenizer:
-#     '''get tokenizer class(either pretrained or newly initialized instance)'''
-#     if cls_name == "ul2-base":
-#         return T5Tokenizer(extra_ids = kwarg["extra_ids"])
-#     return AutoTokenizer.from_pretrained(cls_name)
-    
+
 @dataclass
 class DataArguments:
-    corpora_dir: str = field(
+    corpora_dirpath: str = field(
         default="corpora",
     )
     corpus_type: str = field(
@@ -40,6 +32,7 @@ class DataArguments:
     cache_dir : str = field(
         default="./.cache"
     )
+    output_base_dirpath: str = field(default="tokenizers")
 
 
 @dataclass
@@ -75,6 +68,7 @@ def main():
     data_args, model_args = parser.parse_args_into_dataclasses()
     corpora = load_corpora(data_args.corpora_dir, data_args.corpus_type, cache_dir=data_args.cache_dir)
 
+
     assert data_args.sampling_ratio > 0, "sampling_ratio must be greater than 0."
 
     if 0 < data_args.sampling_ratio < 1.0:
@@ -108,7 +102,7 @@ def main():
             vocab_size=model_args.vocab_size,
             min_frequency=model_args.min_frequency,
         )
-    tokenizer.save_pretrained("tokenizers/" + model_args.model_type)
+    tokenizer.save_pretrained(f"{data_args.output_base_dirpath}/{model_args.model_type}")
 
 
 if __name__ == "__main__":
