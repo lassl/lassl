@@ -189,7 +189,6 @@ class BartProcessor(BaseProcessor):
             return_token_type_ids=False,
             return_attention_mask=False,
             return_special_tokens_mask=False,
-            add_special_tokens=False,
             verbose=False,
         )["input_ids"]
 
