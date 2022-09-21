@@ -1,13 +1,15 @@
 import random
 from typing import Any, Dict, List, Optional
-
 import torch
+import numpy as np
+
 from torch.nn.utils.rnn import pad_sequence
 from transformers import DataCollatorForLanguageModeling, DataCollatorForWholeWordMask
 from transformers.data.data_collator import _torch_collate_batch
 from transformers.models.bart.modeling_bart import shift_tokens_right
 from transformers.tokenization_utils_base import PreTrainedTokenizerBase
 
+from .utils import noise_span_to_unique_sentinel, random_spans_noise_mask, compute_indv_chunk_size
 
 def tolist(x):
     if isinstance(x, list):
@@ -197,7 +199,6 @@ class DataCollatorForBart:
     """
     Processing training examples to mini-batch for Bart (text-infilling)
     """
-
     def __init__(
         self,
         tokenizer: PreTrainedTokenizerBase,
@@ -245,106 +246,8 @@ class DataCollatorForBart:
                 source_tokens_ids_length -= span_length - 1
                 masked_length += span_length
             buffer.append(source_tokens_ids)
+
         return _torch_collate_batch(buffer, tokenizer=self.tokenizer, pad_to_multiple_of=self.pad_to_multiple_of)
-
-
-class DataCollatorForT5:
-    """
-    Processing training examples to mini-batch for T5
-    """
-
-    def __init__(
-        self,
-        tokenizer: PreTrainedTokenizerBase,
-        pad_to_multiple_of: int = 8,
-        noise_density: float = 0.15,
-        mean_span_length: float = 3.0,
-    ):
-        self.tokenizer = tokenizer
-        self.pad_to_multiple_of = pad_to_multiple_of
-        self.noise_density = noise_density
-        self.mean_span_length = mean_span_length
-
-    def _random_spans_noise_mask(self, length: int) -> torch.BoolTensor:
-        """pytorch-ported version of https://github.com/google-research/text-to-text-transfer-transformer/blob/bb545f19ec221e6203dd05505573fbc0c0a9001f/t5/data/preprocessors.py#L2901"""
-        orig_len = length
-        length = max(length, 2)  # set minumum to 2 to avoid degeneracy
-        num_noise_tokens = round(self.noise_density * length)
-        num_noise_tokens = min(max(num_noise_tokens, 1), length - 1)  # set maximum to length-1
-        num_noise_spans = round(num_noise_tokens / self.mean_span_length)
-        num_noise_spans = max(num_noise_spans, 1)  # set minumum to 1
-        num_nonnoise_tokens = length - num_noise_tokens
-
-        def _random_segmentation(num_items, num_segments):
-            # affected by global seed
-            bars = torch.arange(num_items - 1) < num_segments - 1
-            bars = bars[torch.randperm(bars.size(0))]
-            bars = torch.cat((torch.tensor([0]), bars), dim=0)  # to make segment 0 nonzero
-            segment_id = torch.cumsum(bars, dim=0)
-            segment_length = torch.zeros(num_segments, dtype=torch.long).scatter_add(
-                0, segment_id, torch.ones_like(segment_id)
-            )
-            return segment_length
-
-        noise_span_lengths = _random_segmentation(num_noise_tokens, num_noise_spans)
-        nonnoise_span_lengths = _random_segmentation(num_nonnoise_tokens, num_noise_spans)
-        interleaved_span_lengths = torch.stack((nonnoise_span_lengths, noise_span_lengths), dim=1).reshape(-1)
-        span_starts = torch.cumsum(interleaved_span_lengths, dim=0)[:-1]
-        span_start_indicator = torch.zeros(length).long().scatter(0, span_starts, torch.ones_like(span_starts))
-        span_num = torch.cumsum(span_start_indicator, dim=0)
-        is_noise = span_num % 2 == 1
-        return is_noise[:orig_len]
-
-    def _noise_span_to_unique_sentinel(self, tokens, noise_mask, append_last_sentinel=False) -> torch.LongTensor:
-        """pytorch-ported version of https://github.com/google-research/text-to-text-transfer-transformer/blob/bb545f19ec221e6203dd05505573fbc0c0a9001f/t5/data/preprocessors.py#L3074"""
-        if not isinstance(tokens, torch.Tensor):
-            tokens = torch.tensor(tokens)
-        prev_token_is_noise = torch.cat((torch.tensor([0]), noise_mask[:-1]), dim=0).bool()
-        first_noise_tokens = torch.logical_and(noise_mask, torch.logical_not(prev_token_is_noise))
-        subsequent_noise_tokens = torch.logical_and(noise_mask, prev_token_is_noise)
-        sentinel = self.tokenizer.get_vocab()["<extra_id_0>"] + 1 - torch.cumsum(first_noise_tokens.long(), dim=0)
-        tokens = torch.where(first_noise_tokens, sentinel, tokens)
-        ret = torch.masked_select(tokens, torch.logical_not(subsequent_noise_tokens))
-        if append_last_sentinel:  # target masking needs additional sentinel token at last position
-            last_sentinel_id = sentinel.min().reshape(-1) - 1
-            ret = torch.cat((ret, last_sentinel_id), dim=0)
-        ret = torch.cat((ret, torch.tensor([self.tokenizer.eos_token_id], dtype=torch.long)), dim=0)  # add eos token
-        return ret
-
-    def __call__(self, examples):
-        examples = [example["input_ids"] for example in examples]
-        example_n = len(examples)
-        example_len = len(examples[0])
-        noise_masks = [self._random_spans_noise_mask(example_len) for _ in range(example_n)]
-        inputs = [
-            self._noise_span_to_unique_sentinel(example, noise_mask)
-            for example, noise_mask in zip(examples, noise_masks)
-        ]
-        targets = [
-            self._noise_span_to_unique_sentinel(example, ~noise_mask, append_last_sentinel=True)
-            for example, noise_mask in zip(examples, noise_masks)
-        ]
-        # make labels and input_ids
-        batch = {
-            "input_ids": _torch_collate_batch(
-                inputs,
-                tokenizer=self.tokenizer,
-                pad_to_multiple_of=None,  # all samples' length are set to self.max_length by design
-            ),
-            "labels": _torch_collate_batch(
-                targets, tokenizer=self.tokenizer, pad_to_multiple_of=None  # labels' length are all sample by design
-            ),
-        }
-        batch["decoder_input_ids"] = shift_tokens_right(
-            batch["labels"], self.tokenizer.pad_token_id, self.tokenizer.pad_token_id
-        )
-        batch["decoder_attention_mask"] = torch.where(
-            batch["decoder_input_ids"] == self.tokenizer.pad_token_id, 0, torch.ones_like(batch["decoder_input_ids"])
-        )
-        batch["attention_mask"] = torch.where(
-            batch["input_ids"] == self.tokenizer.pad_token_id, 0, torch.ones_like(batch["input_ids"])
-        )
-        return batch
 
 
 class DataCollatorForElectra(DataCollatorForWholeWordMask):
@@ -383,3 +286,112 @@ class DataCollatorForElectra(DataCollatorForWholeWordMask):
             "labels": labels,
             "original_input_ids": original_input_ids
         }
+
+class DataCollatorForT5:
+    """
+    Processing training examples to mini-batch for T5
+    """
+
+    def __init__(
+        self,
+        tokenizer: PreTrainedTokenizerBase,
+        pad_to_multiple_of: int = 8,
+        noise_density : float = 0.15,
+        mean_span_length : float = 3.0,
+    ):
+        self.tokenizer = tokenizer
+        self.pad_to_multiple_of = pad_to_multiple_of
+        self.noise_density = noise_density
+        self.mean_span_length = mean_span_length
+
+
+    def __call__(self, examples):
+        examples = [example["input_ids"] for example in examples]
+        example_n = len(examples)
+        example_len = len(examples[0])
+        noise_masks = [random_spans_noise_mask(self.noise_density, self.mean_span_length, example_len) for _ in range(example_n)]
+        inputs = [noise_span_to_unique_sentinel(self.tokenizer, example, noise_mask) for example, noise_mask in zip(examples, noise_masks)]
+        targets = [noise_span_to_unique_sentinel(self.tokenizer,example, ~noise_mask, append_last_sentinel=True) for example, noise_mask in zip(examples, noise_masks)]
+        # make labels and input_ids
+        batch = {
+            "input_ids": _torch_collate_batch(
+                inputs, tokenizer=self.tokenizer, pad_to_multiple_of=None # all samples' length are set to self.max_length by design
+            ),
+            "labels": _torch_collate_batch(
+                targets, tokenizer=self.tokenizer, pad_to_multiple_of=None # labels' length are all sample by design
+            )
+        }
+        batch["decoder_input_ids"] = shift_tokens_right(
+            batch["labels"], self.tokenizer.pad_token_id, self.tokenizer.pad_token_id
+        )
+        batch["decoder_attention_mask"] = torch.where(
+            batch["decoder_input_ids"] == self.tokenizer.pad_token_id, 0, torch.ones_like(batch["decoder_input_ids"])
+        )
+        batch["attention_mask"] = torch.where(
+            batch["input_ids"] == self.tokenizer.pad_token_id, 0, torch.ones_like(batch["input_ids"])
+        )
+        return batch
+
+class DataCollatorForUL2:
+    """
+    Processing training examples to mini-batch for UL2
+    """
+
+    def __init__(
+        self,
+        tokenizer: PreTrainedTokenizerBase,
+        pad_to_multiple_of: int = 8,
+        noise_densities : List = [0.15,0.15,0.5,0.5,0.15,0.5,0.25], 
+        mean_span_lengths : List = [3.0,8.0,3.0,8.0,64.0,64.0,None],
+        optional_task_prefixes : List[str] = ["[NLU]","[NLU]","[NLG]","[NLG]","[NLG]","[NLG]","[S2S]"]
+    ):
+        mean_span_lengths = [None if isinstance(e, str) else e for e in mean_span_lengths]
+        self.tokenizer = tokenizer
+        self.pad_to_multiple_of = pad_to_multiple_of
+        self.noise_densities = noise_densities 
+        self.mean_span_lengths = mean_span_lengths
+        self.optional_task_prefixes = optional_task_prefixes
+
+    def _noise_mask_with_index(self, index:int):
+        index = self.get_index(index) # get shuffled index
+        _noise_density = self.noise_densities[index]
+        _mean_span_length = self.mean_span_lengths[index]
+        inp_size, _, _mean_span_length = compute_indv_chunk_size(510, _noise_density, _mean_span_length)
+        return random_spans_noise_mask(_noise_density, _mean_span_length, inp_size)
+
+    def _unique_sentinel_input_with_index(self, example, noise_mask, index):
+        denoiser_prefix = self.optional_task_prefixes[self.get_index(index)] 
+        return noise_span_to_unique_sentinel(self.tokenizer, example, noise_mask, denoiser_prefix=denoiser_prefix, first_extra_id = "[new_id_27]")
+
+    def _unique_sentinel_target(self, example, noise_mask):
+        return noise_span_to_unique_sentinel(self.tokenizer, example, ~noise_mask, append_last_sentinel=True, first_extra_id = "[new_id_27]")
+
+    def __call__(self, examples):
+        denoiser_order = np.random.permutation(len(self.noise_densities)).tolist()
+        self.get_index = lambda idx : denoiser_order[idx % len(self.noise_densities)]
+        # denoiser_prefix_order = [self.optional_task_prefixes[i] for i in denoiser_order] 
+
+        examples = [example["input_ids"] for example in examples]
+        example_n = len(examples)
+        noise_masks = [self._noise_mask_with_index(idx) for idx in range(example_n)]
+        inputs = [self._unique_sentinel_input_with_index(example, noise_mask, index) for index, (example, noise_mask) in enumerate(zip(examples, noise_masks))]
+        targets = [self._unique_sentinel_target(example, noise_mask) for example, noise_mask in zip(examples, noise_masks)]
+        # make labels and input_ids
+        batch = {
+            "input_ids": _torch_collate_batch(
+                inputs, tokenizer=self.tokenizer, pad_to_multiple_of=self.pad_to_multiple_of # all samples' length are set to self.max_length by design
+            ),
+            "labels": _torch_collate_batch(
+                targets, tokenizer=self.tokenizer, pad_to_multiple_of=self.pad_to_multiple_of # labels' length are all sample by design
+            )
+        }
+        batch["decoder_input_ids"] = shift_tokens_right(
+            batch["labels"], self.tokenizer.pad_token_id, self.tokenizer.pad_token_id
+        )
+        batch["decoder_attention_mask"] = torch.where(
+            batch["decoder_input_ids"] == self.tokenizer.pad_token_id, 0, torch.ones_like(batch["decoder_input_ids"])
+        )
+        batch["attention_mask"] = torch.where(
+            batch["input_ids"] == self.tokenizer.pad_token_id, 0, torch.ones_like(batch["input_ids"])
+        )
+        return batch
