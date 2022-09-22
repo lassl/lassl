@@ -30,18 +30,7 @@ def get_args():
     parser.add_argument("--writer_batch_size", type=int, default=1000)
     parser.add_argument("--no_load_from_cache_file", action="store_false", dest="load_from_cache_file")
     parser.add_argument("--keep_in_memory", action="store_true")
-    args = parser.parse_args(
-        [
-            "--model_type",
-            "gpt2",
-            "--corpus_type",
-            "sent_text",
-            "--tokenizer_dirpath",
-            "tokenizers/gpt2",
-            "--corpora_dirpath",
-            "corpora_test",
-        ]
-    )
+    args = parser.parse_args()
     return args
 
 
