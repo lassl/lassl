@@ -32,7 +32,8 @@
 LASSL is a **LA**nguage framework for **S**elf-**S**upervised **L**earning. LASSL aims to provide an easy-to-use framework for pretraining language model by only using Huggingface's Transformers and Datasets.
 
 ## Environment setting
-You can install the required packages following:
+First of all, you must install a valid version of pytorch along your computing envrionment. Next, You can install `lassl`the required packages to use `lassl` following.
+
 ```bash
 pip3 install .
 ```
@@ -44,7 +45,7 @@ pip3 install .
 ### 1. Train Tokenizer
 ```bash
 python3 train_tokenizer.py \
-    --corpora_dir $CORPORA_DIR \
+    --corpora_dirpath $CORPORA_DIR \
     --corpus_type $CORPUS_TYPE \
     --sampling_ratio $SAMPLING_RATIO \
     --model_type $MODEL_TYPE \
