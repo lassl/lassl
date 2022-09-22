@@ -1,8 +1,9 @@
 from abc import ABC, abstractmethod
-from typing import Dict, List, Tuple
-from lassl.utils import compute_indv_chunk_size
+from typing import Dict, List
 
 from transformers import AutoTokenizer
+
+from lassl.utils import compute_indv_chunk_size
 
 
 class BaseProcessor(ABC):
@@ -142,6 +143,7 @@ class GPT2Processor(BaseProcessor):
 
         return dict_of_training_examples
 
+
 class AlbertProcessor(BaseProcessor):
     def __init__(self, model_name_or_path: str, max_length: int) -> None:
         super().__init__(model_name_or_path=model_name_or_path, max_length=max_length)
@@ -203,15 +205,17 @@ class BartProcessor(BaseProcessor):
 
         return dict_of_training_examples
 
+
 class T5Processor(BaseProcessor):
-    def __init__(self, model_name_or_path: str, max_length: int, noise_density : float = 0.15, mean_span_length : float = 3.0) -> None:
+    def __init__(
+        self, model_name_or_path: str, max_length: int, noise_density: float = 0.15, mean_span_length: float = 3.0
+    ) -> None:
         super().__init__(model_name_or_path=model_name_or_path, max_length=max_length)
-        self.noise_density = noise_density 
+        self.noise_density = noise_density
         self.mean_span_length = mean_span_length
         self.max_length = max_length
         self._chunk_size = compute_indv_chunk_size(self.max_length, self.noise_density, self.mean_span_length)[0]
 
-
     def __call__(self, list_of_str: List[str]) -> Dict[str, List[int]]:
         dict_of_training_examples: Dict[str, List[int]] = {"input_ids": []}
 
@@ -230,35 +234,39 @@ class T5Processor(BaseProcessor):
             self._buffer.extend(input_ids)
 
             while len(self._buffer) >= self._chunk_size:
-                # slice upto chunk_size - 1 since chunk_size contains eos token already 
+                # slice upto chunk_size - 1 since chunk_size contains eos token already
                 # and add eos token at the end of sequence
-                chunk_ids = self._buffer[: self._chunk_size] 
+                chunk_ids = self._buffer[: self._chunk_size]
                 dict_of_training_examples["input_ids"].append(chunk_ids)
-                self._buffer = self._buffer[self._chunk_size:]
+                self._buffer = self._buffer[self._chunk_size :]
 
         return dict_of_training_examples
 
+
 class UL2Processor(BaseProcessor):
-    def __init__(self, model_name_or_path: str, max_length: int, 
-    noise_densities : List = [0.15,0.15,0.5,0.5,0.15,0.5,0.25], 
-    mean_span_lengths : List = [3.0,8.0,3.0,8.0,64.0,64.0,None]) -> None:
+    def __init__(
+        self,
+        model_name_or_path: str,
+        max_length: int,
+        noise_densities: List = [0.15, 0.15, 0.5, 0.5, 0.15, 0.5, 0.25],
+        mean_span_lengths: List = [3.0, 8.0, 3.0, 8.0, 64.0, 64.0, None],
+    ) -> None:
         super().__init__(model_name_or_path=model_name_or_path, max_length=max_length)
-        self.noise_densities = noise_densities 
+        self.noise_densities = noise_densities
         self.mean_span_lengths = mean_span_lengths
-        self.max_length = max_length - 2 # eos, denoiser_specific_token
+        self.max_length = max_length - 2  # eos, denoiser_specific_token
         self._chunk_size = self._compute_chunk_size()
 
     def _compute_chunk_size(self) -> int:
-        '''
-            compute maximum chunk size for all denoisers
-        '''
+        """
+        compute maximum chunk size for all denoisers
+        """
         inp_sizes = []
         for noise_density, mean_span_length in zip(self.noise_densities, self.mean_span_lengths):
             required_inp_size = compute_indv_chunk_size(self.max_length, noise_density, mean_span_length)[0]
             inp_sizes.append(required_inp_size)
-        
-        return max(inp_sizes)
 
+        return max(inp_sizes)
 
     def __call__(self, list_of_str: List[str]) -> Dict[str, List[int]]:
         dict_of_training_examples: Dict[str, List[int]] = {"input_ids": []}
@@ -278,11 +286,12 @@ class UL2Processor(BaseProcessor):
             self._buffer.extend(input_ids)
 
             while len(self._buffer) >= self._chunk_size:
-                chunk_ids = self._buffer[:self._chunk_size] 
+                chunk_ids = self._buffer[: self._chunk_size]
                 dict_of_training_examples["input_ids"].append(chunk_ids)
-                self._buffer = self._buffer[self._chunk_size:]
+                self._buffer = self._buffer[self._chunk_size :]
 
         return dict_of_training_examples
+
 
 class ElectraProcessor(BaseProcessor):
     def __init__(self, model_name_or_path: str, max_length: int) -> None:

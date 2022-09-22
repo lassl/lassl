@@ -2,7 +2,6 @@ import logging
 import os
 from argparse import ArgumentParser
 
-from datasets import Dataset
 from omegaconf import OmegaConf
 from transformers import (
     CONFIG_MAPPING,
@@ -13,13 +12,14 @@ from transformers import (
     set_seed,
 )
 from transformers.trainer_utils import get_last_checkpoint
-from lassl import MODEL_TYPE_TO_COLLATOR, TokenizerSaveCallback
 
+from datasets import Dataset
+from lassl import MODEL_TYPE_TO_COLLATOR, TokenizerSaveCallback
 
 logger = logging.getLogger(__name__)
 
 
-def get_main_args():
+def get_args():
     parser = ArgumentParser()
     parser.add_argument("--config_path", required=True)
     args = parser.parse_args()
@@ -27,7 +27,7 @@ def get_main_args():
 
 
 def main():
-    args = get_main_args()
+    args = get_args()
     nested_args = OmegaConf.load(args.config_path)
     model_args = nested_args.model
     data_args = nested_args.data
@@ -39,7 +39,7 @@ def main():
     tokenizer = AutoTokenizer.from_pretrained(data_args.data_dir)
 
     if model_args.model_type == "ul2":
-        model_config = CONFIG_MAPPING["t5"](**model_args) # ul2 leverages same model configs as t5
+        model_config = CONFIG_MAPPING["t5"](**model_args)  # ul2 leverages same model configs as t5
     else:
         assert (
             model_args.model_type in CONFIG_MAPPING.keys()

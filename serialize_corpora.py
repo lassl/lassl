@@ -1,72 +1,55 @@
-from dataclasses import dataclass, field
+from argparse import ArgumentParser
+from pathlib import Path
 
-from transformers import HfArgumentParser
 from lassl import MODEL_TYPE_TO_PROCESSOR
 from lassl.utils import load_corpora
 
+CACHE_DIR = str(Path(__file__).parent.resolve() / ".cache")
 
-@dataclass
-class Arguments:
-    model_type: str = field(
-        default="ul2",
-        metadata={
-            "choices": [
-                "bert",
-                "roberta",
-                "gpt2",
-                "albert",
-                "bart",
-                "t5",
-                "ul2",
-                "electra"
-            ]
-        },
+
+def get_args():
+    parser = ArgumentParser()
+    parser.add_argument(
+        "--model_type",
+        choices=["bert", "roberta", "gpt2", "albert", "bart", "t5", "ul2", "electra"],
+        type=str,
+        required=True,
     )
-    tokenizer_dirpath: str = field(default="tokenizers/bert")
-    output_base_dirpath: str = field(default="datasets")
-    corpora_dirpath: str = field(
-        default="corpora",
+    parser.add_argument(
+        "--corpus_type",
+        choices=["docu_text", "docu_json", "sent_text", "sent_json"],
+        type=str,
+        default="docu_json",
     )
-    corpus_type: str = field(
-        default="sent_text",
-        metadata={
-            "choices": [
-                "docu_text",
-                "docu_json",
-                "sent_text",
-                "sent_json",
-            ]
-        },
+    parser.add_argument("--tokenizer_dirpath", type=str, required=True)
+    parser.add_argument("--corpora_dirpath", type=str, default="datasets", required=True)
+    parser.add_argument("--output_base_dirpath", type=str, default="datasets")
+    parser.add_argument("--max_length", type=int, default=512)
+    parser.add_argument("--num_proc", type=int, default=1)
+    parser.add_argument("--batch_size", type=int, default=1000)
+    parser.add_argument("--writer_batch_size", type=int, default=1000)
+    parser.add_argument("--no_load_from_cache_file", action="store_false", dest="load_from_cache_file")
+    parser.add_argument("--keep_in_memory", action="store_true")
+    args = parser.parse_args(
+        [
+            "--model_type",
+            "gpt2",
+            "--corpus_type",
+            "sent_text",
+            "--tokenizer_dirpath",
+            "tokenizers/gpt2",
+            "--corpora_dirpath",
+            "corpora_test",
+        ]
     )
-    max_length: int = field(
-        default=512,
-    )
-    num_proc: int = field(
-        default=1,
-    )
-    batch_size: int = field(
-        default=1000,
-    )
-    writer_batch_size: int = field(
-        default=1000,
-    )
-    load_from_cache_file: bool = field(
-        default=True,
-    )
-    keep_in_memory: bool = field(
-        default=False,
-    )
-    cache_dir : str = field(
-        default=".cache/"
-    )
+    return args
 
 
 def main():
-    parser = HfArgumentParser(Arguments)
-    args = parser.parse_args_into_dataclasses()[0]
+    args = get_args()
     data_processor = MODEL_TYPE_TO_PROCESSOR[args.model_type](args.tokenizer_dirpath, args.max_length)
 
-    corpora = load_corpora(args.corpora_dir, corpus_type=args.corpus_type, cache_dir=args.cache_dir)
+    corpora = load_corpora(args.corpora_dirpath, corpus_type=args.corpus_type, cache_dir=CACHE_DIR)
 
     dataset = corpora.map(
         lambda examples: data_processor(examples["text"]),

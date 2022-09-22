@@ -21,6 +21,9 @@
     <a href="https://github.com/lassl/lassl/issues">
         <img alt="Issues" src="https://img.shields.io/github/issues/lassl/lassl">
     </a>
+    <a href="https://huggingface.co/lassl">
+        <img alt="Issues" src="https://img.shields.io/badge/huggingface-lassl-002060">
+    </a>
 </p>
 
 </div>
@@ -29,19 +32,11 @@
 LASSL은 **LA**nguage **S**elf-**S**upervised **L**earning의 약자로, 데이터만 있다면 누구나 쉽게 자신만의 언어모델을 가질 수 있도록 Huggingface의 Transformers, Datasets 라이브러리를 이용해 **언어 모델 사전학습**을 제공합니다.
 
 ## Environment setting
-아래 명령어를 통해 필요한 패키지를 설치하거나,
-```bash
-pip3 install -r requirements.txt
-```
+먼저 컴퓨팅 환경에 알맞은 버전의 pytorch를 설치해야합니다. 그 다음 아래의 명령어를 통해 `lassl`을 설치할 수 있습니다.
 
-poetry를 이용하여 환경설정을 할 수 있습니다.
 ```bash
-# poetry 설치
-curl -sSL https://raw.githubusercontent.com/python-poetry/poetry/master/get-poetry.py | python -
-# poetry dependencies 환경 설정
-poetry install
+pip3 install .
 ```
-
 
 ## How to Use
 - 언어 모델 사전학습은 크게 **1. 토크나이저 학습**, **2. 코퍼스 시리얼라이즈**, **3. 언어 모델 사전학습**의 세 단계로 나눌 수 있습니다. 
@@ -50,18 +45,7 @@ poetry install
 ### 1. Train Tokenizer
 ```bash
 python3 train_tokenizer.py \
-    --corpora_dir $CORPORA_DIR \
-    --corpus_type $CORPUS_TYPE \
-    --sampling_ratio $SAMPLING_RATIO \
-    --model_type $MODEL_TYPE \
-    --vocab_size $VOCAB_SIZE \
-    --min_frequency $MIN_FREQUENCY
-```
-
-```bash
-# poetry 이용
-poetry run python3 train_tokenizer.py \
-    --corpora_dir $CORPORA_DIR \
+    --corpora_dirpath $CORPORA_DIR \
     --corpus_type $CORPUS_TYPE \
     --sampling_ratio $SAMPLING_RATIO \
     --model_type $MODEL_TYPE \
@@ -80,26 +64,11 @@ python3 serialize_corpora.py \
     --num_proc $NUM_PROC
 ```
 
-```bash
-# poetry 이용
-poetry run python3 serialize_corpora.py \
-    --model_type $MODEL_TYPE \
-    --tokenizer_dir $TOKENIZER_DIR \
-    --corpora_dir $CORPORA_DIR \
-    --corpus_type $CORPUS_TYPE \
-    --max_length $MAX_LENGTH \
-    --num_proc $NUM_PROC
-```
-
 ### 3. Pretrain Language Model
 ```bash
 python3 pretrain_language_model.py --config_path $CONFIG_PATH
 ```
 
-```bash
-# poetry 이용
-poetry run python3 pretrain_language_model.py --config_path $CONFIG_PATH
-```
 
 ```bash
 # TPU를 사용할 때는 아래 명령어를 사용합니다. (poetry 환경은 PyTorch XLA를 기본으로 제공하지 않습니다.)
