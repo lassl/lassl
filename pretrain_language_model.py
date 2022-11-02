@@ -15,6 +15,7 @@ from transformers.trainer_utils import get_last_checkpoint
 
 from datasets import Dataset
 from lassl import MODEL_TYPE_TO_COLLATOR, TokenizerSaveCallback
+from lassl.utils import load_corpora
 
 logger = logging.getLogger(__name__)
 
@@ -34,9 +35,15 @@ def main():
     collator_args = nested_args.collator
     training_args = TrainingArguments(**nested_args.training)
 
-    train_dataset = Dataset.load_from_disk(data_args.data_dir)
-    eval_dataset = None
-    tokenizer = AutoTokenizer.from_pretrained(data_args.data_dir)
+    if not data_args.from_parquet:
+        train_dataset = Dataset.load_from_disk(data_args.data_dir)
+    else:
+        train_dataset = load_corpora(data_args.data_dir, corpus_type="parquet", cache_dir=data_args.cache_dir)
+
+    if data_args.tokenizer_dir:
+        tokenizer = AutoTokenizer.from_pretrained(data_args.tokenizer_dir)
+    else:
+        tokenizer = AutoTokenizer.from_pretrained(data_args.data_dir)
 
     if model_args.model_type == "ul2":
         model_config = CONFIG_MAPPING["t5"](**model_args)  # ul2 leverages same model configs as t5
@@ -51,6 +58,7 @@ def main():
 
     data_collator = MODEL_TYPE_TO_COLLATOR[model_args.model_type](tokenizer=tokenizer, **collator_args)
 
+    eval_dataset = None
     if training_args.do_eval and data_args.test_size:
         train_dataset, eval_dataset = (
             _ for _ in train_dataset.train_test_split(test_size=data_args.test_size).values()

@@ -13,7 +13,7 @@ install_requires = [p.strip() for p in install_requires]
 
 setup(
     name="lassl",
-    version="0.2.0",
+    version="1.0.0",
     author="seopbo, bzantium, iron-ij, monologg",
     author_email="bsk0130@gmail.com, ryumin93@gmail.com, yij1126@gmail.com, adieujw@gmail.com",
     description="Easy framework for pre-training language models",
