@@ -1,6 +1,6 @@
 import random
 from pathlib import Path
-from typing import Generator, Optional, Union
+from typing import Generator, List, Optional, Tuple, Union
 
 import torch
 
@@ -32,6 +32,10 @@ def load_corpora(dirpath, corpus_type="docu_json", **kwargs):
         list_of_file_paths = [str(file_path) for file_path in corpora_dir.rglob("*.txt")]
         if not list_of_file_paths:
             raise Exception("Check file extensions. Your files are not *.txt")
+    elif extension == "parquet":
+        list_of_file_paths = [str(file_path) for file_path in corpora_dir.rglob("*.parquet")]
+        if not list_of_file_paths:
+            raise Exception("Check file extensions. Your files are not *.parquet")
     else:
         raise Exception(f"{extension} is not supported.")
 
@@ -43,8 +47,12 @@ def load_corpora(dirpath, corpus_type="docu_json", **kwargs):
         return load_dataset(SENT_TEXT_SCRIPT, data_files=list_of_file_paths, split="train", **kwargs)
     elif corpus_type == "sent_json":
         raise NotImplementedError("sent_json will be supported soon.")
+    elif corpus_type == "parquet":
+        return load_dataset("parquet", data_files=list_of_file_paths, split="train", **kwargs)
     else:
-        raise ValueError(f"{corpus_type} must be one of ['docu_text', 'docu_json', 'sent_text', 'sent_json']")
+        raise ValueError(
+            f"{corpus_type} must be one of ['docu_text', 'docu_json', 'sent_text', 'sent_json', 'parquet']"
+        )
 
 
 def get_params_without_weight_decay_ln(named_params: Union[list, Generator], weight_decay: float = 0.1):
@@ -62,7 +70,9 @@ def get_params_without_weight_decay_ln(named_params: Union[list, Generator], wei
     return optimizer_grouped_parameters
 
 
-def compute_indv_chunk_size(target_length, noise_density, mean_span_length):
+def compute_indv_chunk_size(
+    target_length: int, noise_density: float, mean_span_length: Union[float, int]
+) -> Tuple[int]:
     """pre-corruption token length approximation for T5 and UL2"""
 
     def _tokens_length_to_inputs_length_targets_length(tokens_length):
@@ -119,11 +129,12 @@ def random_spans_noise_mask(noise_density: float, mean_span_length: float, lengt
 
 def noise_span_to_unique_sentinel(
     tokenizer,
-    tokens,
-    noise_mask,
-    append_last_sentinel=False,
+    tokens: Union[List[int], torch.Tensor],
+    noise_mask: torch.BoolTensor,
+    first_sentinel_index: int,
+    append_last_sentinel: bool = False,
     denoiser_prefix: Optional[str] = None,
-    first_extra_id: str = "<extra_id_0>",
+    is_sentinel_index_descending: bool = True,
 ) -> torch.LongTensor:
     """pytorch-ported version of https://github.com/google-research/text-to-text-transfer-transformer/blob/bb545f19ec221e6203dd05505573fbc0c0a9001f/t5/data/preprocessors.py#L3074"""
     if not isinstance(tokens, torch.Tensor):
@@ -141,11 +152,21 @@ def noise_span_to_unique_sentinel(
     prev_token_is_noise = torch.cat((torch.tensor([0]), noise_mask[:-1]), dim=0).bool()
     first_noise_tokens = torch.logical_and(noise_mask, torch.logical_not(prev_token_is_noise))
     subsequent_noise_tokens = torch.logical_and(noise_mask, prev_token_is_noise)
-    sentinel = tokenizer.get_vocab()[first_extra_id] + 1 - torch.cumsum(first_noise_tokens.long(), dim=0)
+
+    # apply sentinel tokens to noise tokens indices based on the order of the sentinel tokens
+    if is_sentinel_index_descending:
+        sentinel = first_sentinel_index + 1 - torch.cumsum(first_noise_tokens.long(), dim=0)
+    else:
+        sentinel = first_sentinel_index - 1 + torch.cumsum(first_noise_tokens.long(), dim=0)
     tokens = torch.where(first_noise_tokens, sentinel, tokens)
     ret = torch.masked_select(tokens, torch.logical_not(subsequent_noise_tokens))
-    if append_last_sentinel:  # target masking needs additional sentinel token at last position
+
+    # target masking needs additional sentinel token at last position
+    if append_last_sentinel and is_sentinel_index_descending:
         last_sentinel_id = sentinel.min().reshape(-1) - 1
+        ret = torch.cat((ret, last_sentinel_id), dim=0)
+    elif append_last_sentinel and not is_sentinel_index_descending:
+        last_sentinel_id = sentinel.max().reshape(-1) + 1
         ret = torch.cat((ret, last_sentinel_id), dim=0)
     ret = torch.cat((ret, torch.tensor([tokenizer.eos_token_id], dtype=torch.long)), dim=0)  # add eos token
 

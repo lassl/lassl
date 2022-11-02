@@ -19,6 +19,9 @@ model: # Edit model config referring to the follow link: https://huggingface.co/
   vocab_size: 32128
 data:
   data_dir: "datasets/ul2" # Fill in the path of a output of running serialize_corpora.py.
+  tokenizer_dir: # Leave blank if you use the datasets processed from serialize_corpora.py
+  cache_dir: # If you stored dataset cache to specific dir.
+  from_parquet: # True if you use data format of .parquet, else leave blank
   test_size: 0.0 # If you set this argument, arguments must be floating type. (e.g. 0.01)
 collator:
   pad_to_multiple_of: 8
@@ -47,11 +50,11 @@ collator:
     - "[NLG]"
     - "[S2S]"
 training: # Edit training config referring to the follow link: https://huggingface.co/docs/transformers/master/en/main_classes/trainer#transformers.TrainingArguments
-  output_dir: "checkpoints/ul2" # Fill in the path which is used to save checkpoints.
+  output_dir: "checkpoints/ul2-base" # Fill in the path which is used to save checkpoints.
   overwrite_output_dir: True # If you use multi-node, set this True.
   do_train: True
   do_eval: False
-  per_device_train_batch_size: 8
+  per_device_train_batch_size: 8 # global_batch_size=512, with 8-gpus
   per_device_eval_batch_size: 8
   gradient_accumulation_steps: 8
   learning_rate: 1e-4
@@ -60,20 +63,20 @@ training: # Edit training config referring to the follow link: https://huggingfa
   adam_beta2: 0.999
   adam_epsilon: 1e-08
   max_grad_norm: 1.0
-  max_steps: 1000000
+  num_train_epochs: 1
   lr_scheduler_type: "linear"
-  warmup_steps: 10000
+  warmup_ratio: 0.01
   logging_strategy: "steps"
-  logging_steps: 500
+  logging_steps: 100
   evaluation_strategy: "no"
   eval_steps: 0
   save_strategy: "steps"
-  save_steps: 5000
+  save_steps: 10000
   save_total_limit: 5
   seed: 42
-  fp16: False
+  fp16: True # mixed-precision (only with "cuda" device)
   sharded_ddp: False
-  tpu_num_cores: 8
-  report_to : "wandb"
   deepspeed:
   gradient_checkpointing: False
+  tpu_num_cores: # leave blank if not training on TPU devices
+  report_to: "tensorboard" # "none" if monitoring not necessary
