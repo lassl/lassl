@@ -25,30 +25,14 @@ data:
   test_size: 0.0 # If you set this argument, arguments must be floating type. (e.g. 0.01)
 collator:
   pad_to_multiple_of: 8
-  noise_densities :
-    - 0.15
-    - 0.15
-    - 0.5 
-    - 0.5
-    - 0.15
-    - 0.5
-    - 0.25
-  mean_span_lengths :
-    - 3.0
-    - 8.0
-    - 3.0
-    - 8.0
-    - 64.0
-    - 64.0
-    - "None"
-  optional_task_prefixes:
-    - "[NLU]"
-    - "[NLU]"
-    - "[NLG]"
-    - "[NLG]"
-    - "[NLG]"
-    - "[NLG]"
-    - "[S2S]"
+  target_sequence_length: 512
+  r_prefix: "[NLU]"
+  x_prefix: "[NLG]"
+  s_prefix: "[S2S]"
+  r_ratio: 0.5
+  x_ratio: 0.25
+  s_ratio: 0.25
+  first_extra_id: "<extra_id_127>"
 training: # Edit training config referring to the follow link: https://huggingface.co/docs/transformers/master/en/main_classes/trainer#transformers.TrainingArguments
   output_dir: "checkpoints/ul2-base" # Fill in the path which is used to save checkpoints.
   overwrite_output_dir: True # If you use multi-node, set this True.

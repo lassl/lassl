@@ -1,3 +1,4 @@
+import math
 import random
 from typing import Any, Dict, List, Optional
 
@@ -378,10 +379,15 @@ class DataCollatorForT5:
         For example, if "<extra_id_0>" is mapped to 10 in vocab and "<extra_id_99>" is mapped to 109 in vocab,
         the output of is_sentinel_index_descending() should be "False" and vice versa.
         """
-        if "0" in first_extra_id:
-            last_extra_id = "99".join(first_extra_id.split("0"))
+        all_sentiniel_tokens = self.tokenizer.additional_special_tokens
+        assert (
+            first_extra_id in all_sentiniel_tokens
+        ), "all sentinel tokens must be included in additional_special_tokens"
+        first_extra_add_id = all_sentiniel_tokens.index(first_extra_id)
+        if first_extra_add_id == 0:
+            last_extra_id = all_sentiniel_tokens[-1]
         else:
-            raise ValueError("first sentinel tokens must include zero")
+            last_extra_id = all_sentiniel_tokens[0]
         return self.tokenizer.get_vocab()[last_extra_id] - self.tokenizer.get_vocab()[first_extra_id] < 0
 
     def __call__(self, examples):
@@ -444,19 +450,42 @@ class DataCollatorForUL2:
         self,
         tokenizer: PreTrainedTokenizerBase,
         pad_to_multiple_of: int = 8,
-        noise_densities: List = [0.15, 0.15, 0.5, 0.5, 0.15, 0.5, 0.25],
-        mean_span_lengths: List = [3.0, 8.0, 3.0, 8.0, 64.0, 64.0, None],
-        optional_task_prefixes: List[str] = ["[NLU]", "[NLU]", "[NLG]", "[NLG]", "[NLG]", "[NLG]", "[S2S]"],
+        target_sequence_length: int = 512,
+        r_prefix: str = "[NLU]",
+        x_prefix: str = "[NLG]",
+        s_prefix: str = "[S2S]",
+        r_ratio: float = 0.5,
+        x_ratio: float = 0.25,
+        s_ratio: float = 0.25,
         first_extra_id: str = "[new_id_27]",
     ):
-        mean_span_lengths = [None if isinstance(e, str) else e for e in mean_span_lengths]
         self.tokenizer = tokenizer
         self.pad_to_multiple_of = pad_to_multiple_of
+        self.target_sequence_length = target_sequence_length
+        self._compute_param_from_ratio(r_prefix, x_prefix, s_prefix, r_ratio, x_ratio, s_ratio)
+        self.first_sentinel_index: int = self.tokenizer.get_vocab()[first_extra_id]
+        self.descending_sentinel: bool = self.is_sentinel_index_descending(first_extra_id)
+
+    def _compute_param_from_ratio(self, r_prefix, x_prefix, s_prefix, r_ratio, x_ratio, s_ratio):
+        all_ratio = (r_ratio, x_ratio, s_ratio)
+        assert all([0 < r < 1 for r in all_ratio]), "each ratio must be in range (0, 1)"
+        assert int(sum(all_ratio)) == 1, "sum of each denoiser ratio must be one"
+        noise_densities, mean_span_lengths = [], []
+        denoiser_reference = {
+            r_prefix: [(0.15, 3.0), (0.15, 8.0)],
+            x_prefix: [(0.5, 3.0), (0.5, 8.0), (0.15, 64.0), (0.5, 64.0)],
+            s_prefix: [(0.25, None)],
+        }
+        optional_task_prefixes = np.concatenate(
+            [[d] * int(np.round(100 * ratio)) for d, ratio in zip(denoiser_reference.keys(), all_ratio)]
+        ).tolist()
+        for prefix in optional_task_prefixes:
+            idx = random.randrange(0, len(denoiser_reference[prefix]))
+            noise_densities.append(denoiser_reference[prefix][idx][0])
+            mean_span_lengths.append(denoiser_reference[prefix][idx][1])
         self.noise_densities = noise_densities
         self.mean_span_lengths = mean_span_lengths
         self.optional_task_prefixes = optional_task_prefixes
-        self.first_sentinel_index: int = self.tokenizer.get_vocab()[first_extra_id]
-        self.descending_sentinel: bool = self.is_sentinel_index_descending(first_extra_id)
 
     # check whether sentinel tokens indices are in descending order or not
     def is_sentinel_index_descending(self, first_extra_id: str) -> bool:
@@ -466,17 +495,25 @@ class DataCollatorForUL2:
         For example, if "<new_id_27>" is mapped to 100 in vocab and "<new_id_0>" is mapped to 73 in vocab,
         the output of is_sentinel_index_descending() should be "True" and vice versa.
         """
-        if "27" in first_extra_id:
-            last_extra_id = "0".join(first_extra_id.split("27"))
+        all_sentinel_tokens = list(
+            filter(lambda x: bool("extra_id_" in str(x)), self.tokenizer.additional_special_tokens)
+        )
+        if first_extra_id not in all_sentinel_tokens:
+            return self.tokenizer.get_vocab()[all_sentinel_tokens[0]] - self.tokenizer.get_vocab()[first_extra_id] < 0
+        first_extra_add_id = all_sentinel_tokens.index(first_extra_id)
+        if first_extra_add_id == 0:
+            last_extra_id = all_sentinel_tokens[-1]
         else:
-            raise ValueError("first sentinel tokens must include 27")
+            last_extra_id = all_sentinel_tokens[0]
         return self.tokenizer.get_vocab()[last_extra_id] - self.tokenizer.get_vocab()[first_extra_id] < 0
 
     def _noise_mask_with_index(self, index: int) -> torch.BoolTensor:
         index = self.get_index(index)  # get shuffled index
         _noise_density = self.noise_densities[index]
         _mean_span_length = self.mean_span_lengths[index]
-        inp_size, _, _mean_span_length = compute_indv_chunk_size(510, _noise_density, _mean_span_length)
+        inp_size, _, _mean_span_length = compute_indv_chunk_size(
+            self.target_sequence_length - 2, _noise_density, _mean_span_length
+        )
         return random_spans_noise_mask(_noise_density, _mean_span_length, inp_size)
 
     def _unique_sentinel_input_with_index(
@@ -490,6 +527,7 @@ class DataCollatorForUL2:
             first_sentinel_index=self.first_sentinel_index,
             denoiser_prefix=denoiser_prefix,
             is_sentinel_index_descending=self.descending_sentinel,
+            append_last_sentinel=False,
         )
 
     def _unique_sentinel_target(self, example: List[int], noise_mask: torch.BoolTensor) -> torch.LongTensor:
@@ -499,6 +537,7 @@ class DataCollatorForUL2:
             ~noise_mask,
             first_sentinel_index=self.first_sentinel_index,
             is_sentinel_index_descending=self.descending_sentinel,
+            append_last_sentinel=False,
         )
 
     def __call__(self, examples):

@@ -2,9 +2,8 @@ import random
 from pathlib import Path
 from typing import Generator, List, Optional, Tuple, Union
 
-import torch
-
 import datasets
+import torch
 from datasets import load_dataset
 
 SENT_TEXT_SCRIPT = str((Path(__file__).parent / "loading" / "sent_text.py").resolve().absolute())
